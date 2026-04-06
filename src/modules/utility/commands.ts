@@ -3,7 +3,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import type { ChatCommand } from '../../core/types.js';
 import type { AppContext } from '../../core/app-context.js';
 import { ensureScope } from '../../core/command-helpers.js';
-import { infoEmbed, successEmbed } from '../../ui/embeds.js';
+import { infoEmbed, successEmbed, pingEmbed, healthEmbed } from '../../ui/embeds.js';
 
 const helpCommand: ChatCommand = {
   name: 'help',
@@ -62,7 +62,7 @@ const pingCommand: ChatCommand = {
 
     const heartbeat = Math.round(context.client.ws.ping);
     await interaction.reply({
-      embeds: [successEmbed('Pong', `Gateway heartbeat: **${heartbeat} ms**`)],
+      embeds: [pingEmbed(heartbeat)],
     });
   },
 };
@@ -84,15 +84,11 @@ const healthCommand: ChatCommand = {
 
     await interaction.editReply({
       embeds: [
-        infoEmbed(
-          'Health',
-          [
-            `Bot: **ok**`,
-            `Discord gateway ping: **${Math.round(context.client.ws.ping)} ms**`,
-            `SQLite: **${context.database.path}**`,
-            `Seasonal agent: **${agentHealth}**`,
-          ].join('\n'),
-        ),
+        healthEmbed({
+          gatewayPingMs: Math.round(context.client.ws.ping),
+          dbPath: context.database.path,
+          agentStatus: agentHealth,
+        }),
       ],
     });
   },

@@ -28,9 +28,19 @@ export async function askAgent(
     interaction.channelId ?? undefined,
   );
 
+  const channelName = interaction.channel && 'name' in interaction.channel
+    ? (interaction.channel.name ?? undefined)
+    : undefined;
+
   return context.seasonalAgent.botChat({
-    message: question,
-    session_id: sessionId,
+    message:      question,
+    session_id:   sessionId,
     persist_history: true,
+    user_id:      interaction.user.id,
+    user_name:    interaction.user.username,
+    guild_id:     interaction.guildId ?? undefined,
+    guild_name:   interaction.guild?.name ?? undefined,
+    channel_id:   interaction.channelId ?? undefined,
+    channel_name: channelName,
   });
 }

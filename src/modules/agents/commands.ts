@@ -3,7 +3,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import type { ChatCommand } from '../../core/types.js';
 import type { AppContext } from '../../core/app-context.js';
 import { ensureScope } from '../../core/command-helpers.js';
-import { infoEmbed } from '../../ui/embeds.js';
+import { agentReplyEmbed } from '../../ui/embeds.js';
 import { askAgent, type AgentTarget } from './service.js';
 
 const askCommand: ChatCommand = {
@@ -43,16 +43,14 @@ const askCommand: ChatCommand = {
 
     const result = await askAgent(context, interaction, target, question);
 
-    const detailLine = result.used_tools.length > 0
-      ? `\n\nTools used: ${result.used_tools.join(', ')}`
-      : '';
-
     await interaction.editReply({
       embeds: [
-        infoEmbed(
-          `Agent Reply · ${target}`,
-          `${result.reply}${detailLine}`,
-        ),
+        agentReplyEmbed(target, {
+          reply:      result.reply,
+          usedTools:  result.used_tools,
+          model:      result.model,
+          toolRounds: result.tool_rounds,
+        }),
       ],
     });
   },
