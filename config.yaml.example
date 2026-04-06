@@ -7,7 +7,7 @@ bot:
   allowed_guild_ids: []
 
 database:
-  path: ./var/seasonalnet_bot.db
+  path: /var/lib/seasonalnet/discord-bot/bot.db
 
 logging:
   level: info
