@@ -1,0 +1,50 @@
+bot:
+  token_env: SEASONALNET_BOT_TOKEN
+  client_id_env: SEASONALNET_BOT_CLIENT_ID
+  guild_id_env: SEASONALNET_BOT_GUILD_ID
+  activity: SeasonalNet workflows
+  status: online
+  allowed_guild_ids: []
+
+database:
+  path: ./var/seasonalnet_bot.db
+
+logging:
+  level: info
+
+scopes:
+  defaults:
+    - utility.use
+  grants:
+    - match:
+        role_names:
+          - SeasonalNet Staff
+      scopes:
+        - agents.use
+        - moderation.manage
+        - moderation.timeout
+        - moderation.purge
+        - moderation.slowmode
+        - moderation.lock
+    - match:
+        role_names:
+          - SeasonalNet Trusted
+      scopes:
+        - agents.use
+
+integrations:
+  seasonal_agent:
+    enabled: true
+    base_url: http://127.0.0.1:8765
+    timeout_ms: 30000
+    bot_token_env: SEASONAL_AGENT_BOT_TOKEN
+
+agents:
+  max_question_length: 1500
+  session_mode: per_user_in_channel
+  default_target: seasonalnet
+
+moderation:
+  max_purge_count: 100
+  lock_reason: Locked by SeasonalNet bot
+  unlock_reason: Unlocked by SeasonalNet bot
