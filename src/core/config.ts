@@ -52,6 +52,10 @@ export interface Settings {
     lock_reason: string;
     unlock_reason: string;
   };
+  cdn: {
+    /** Base URL for the SeasonalNet icon CDN. Defaults to https://cdn.seasonalnet.org */
+    icon_base_url: string;
+  };
 }
 
 const DEFAULTS: Settings = {
@@ -91,6 +95,9 @@ const DEFAULTS: Settings = {
     lock_reason: 'Locked by SeasonalNet bot',
     unlock_reason: 'Unlocked by SeasonalNet bot',
   },
+  cdn: {
+    icon_base_url: 'https://cdn.seasonalnet.org',
+  },
 };
 
 export function resolveConfigPath(): string {
@@ -126,6 +133,7 @@ export function loadSettings(): Settings {
     },
     agents: { ...DEFAULTS.agents, ...(parsed.agents ?? {}) },
     moderation: { ...DEFAULTS.moderation, ...(parsed.moderation ?? {}) },
+    cdn: { ...DEFAULTS.cdn, ...(parsed.cdn ?? {}) },
   };
 
   const levelOverride = process.env.SEASONALNET_BOT_LOG_LEVEL as Settings['logging']['level'] | undefined;

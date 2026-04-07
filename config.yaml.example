@@ -48,3 +48,8 @@ moderation:
   max_purge_count: 100
   lock_reason: Locked by SeasonalNet bot
   unlock_reason: Unlocked by SeasonalNet bot
+
+cdn:
+  # Base URL for the SeasonalNet icon CDN (Lucide icon PNG renderer).
+  # Override only if running the CDN at a non-standard location.
+  icon_base_url: https://cdn.seasonalnet.org

@@ -17,11 +17,14 @@ import type { AppContext } from './core/app-context.js';
 import { Database } from './storage/database.js';
 import { SeasonalAgentClient } from './integrations/seasonal-agent.js';
 import { loadCommands } from './modules/index.js';
-import { errorEmbed } from './ui/embeds.js';
+import { errorEmbed, configureEmbeds } from './ui/embeds.js';
 
 async function main(): Promise<void> {
   const settings = loadSettings();
   const logger = new Logger(settings.logging.level);
+
+  // Configure embed factories with the CDN base URL before any commands run.
+  configureEmbeds(settings.cdn.icon_base_url);
 
   const botToken = requireEnv(settings.bot.token_env);
   const seasonalAgentToken = requireEnv(settings.integrations.seasonal_agent.bot_token_env);

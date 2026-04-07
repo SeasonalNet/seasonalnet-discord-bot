@@ -1,5 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 
+import { iconUrl, colorToHex } from './cdn.js';
+
 // ── Palette ────────────────────────────────────────────────────────────────
 
 const Colors = {
@@ -10,28 +12,73 @@ const Colors = {
   warning: 0xfbbf24,  // Amber
 } as const;
 
+// Lucide icon names paired to each embed type.
+const Icons = {
+  success: 'circle-check',
+  error:   'circle-x',
+  info:    'info',
+  ping:    'activity',
+  health:  'heart-pulse',
+  agent:   'bot',
+  footer:  'cloud-rain',   // matches "rain · SeasonalNet" footer text
+} as const;
+
+// Footer icon color: subdued grey that reads well against Discord backgrounds.
+const FOOTER_ICON_HEX = '8094A4';
+
 const FOOTER_TEXT = 'rain · SeasonalNet';
+
+// ── Module-level CDN configuration ─────────────────────────────────────────
+//
+// Call configureEmbeds() once at startup (from src/index.ts) before any
+// embeds are built.  All embed factories below read _cdnBase at call time, so
+// they automatically pick up the configured URL.
+
+let _cdnBase = 'https://cdn.seasonalnet.org';
+
+/**
+ * Set the CDN base URL used by all embed factories.
+ * Should be called once during bot startup with settings.cdn.icon_base_url.
+ */
+export function configureEmbeds(iconBaseUrl: string): void {
+  _cdnBase = iconBaseUrl;
+}
 
 // ── Base ───────────────────────────────────────────────────────────────────
 
 function base(): EmbedBuilder {
   return new EmbedBuilder()
-    .setFooter({ text: FOOTER_TEXT })
+    .setFooter({
+      text:    FOOTER_TEXT,
+      iconURL: iconUrl(_cdnBase, Icons.footer, FOOTER_ICON_HEX),
+    })
     .setTimestamp(new Date());
 }
 
 // ── Generic status embeds ──────────────────────────────────────────────────
 
 export function successEmbed(title: string, description: string): EmbedBuilder {
-  return base().setColor(Colors.success).setTitle(title).setDescription(description);
+  return base()
+    .setColor(Colors.success)
+    .setTitle(title)
+    .setDescription(description)
+    .setThumbnail(iconUrl(_cdnBase, Icons.success, colorToHex(Colors.success)));
 }
 
 export function errorEmbed(title: string, description: string): EmbedBuilder {
-  return base().setColor(Colors.error).setTitle(title).setDescription(description);
+  return base()
+    .setColor(Colors.error)
+    .setTitle(title)
+    .setDescription(description)
+    .setThumbnail(iconUrl(_cdnBase, Icons.error, colorToHex(Colors.error)));
 }
 
 export function infoEmbed(title: string, description: string): EmbedBuilder {
-  return base().setColor(Colors.info).setTitle(title).setDescription(description);
+  return base()
+    .setColor(Colors.info)
+    .setTitle(title)
+    .setDescription(description)
+    .setThumbnail(iconUrl(_cdnBase, Icons.info, colorToHex(Colors.info)));
 }
 
 // ── Ping ───────────────────────────────────────────────────────────────────
@@ -45,7 +92,8 @@ export function pingEmbed(latencyMs: number): EmbedBuilder {
   return base()
     .setColor(color)
     .setTitle('Pong')
-    .setDescription(`Gateway heartbeat: **${latencyMs} ms**`);
+    .setDescription(`Gateway heartbeat: **${latencyMs} ms**`)
+    .setThumbnail(iconUrl(_cdnBase, Icons.ping, colorToHex(color)));
 }
 
 // ── Health ─────────────────────────────────────────────────────────────────
@@ -64,10 +112,12 @@ export function healthEmbed(status: HealthStatus): EmbedBuilder {
 
   const gatewayIcon = status.gatewayPingMs < 300 ? '✅' : '⚠️';
   const overallHealthy = status.agentStatus !== 'error';
+  const color = overallHealthy ? Colors.success : Colors.error;
 
   return base()
-    .setColor(overallHealthy ? Colors.success : Colors.error)
+    .setColor(color)
     .setTitle('Health')
+    .setThumbnail(iconUrl(_cdnBase, Icons.health, colorToHex(color)))
     .addFields(
       { name: 'Bot',            value: '✅ ok',                                         inline: true  },
       { name: 'Gateway',        value: `${gatewayIcon} **${status.gatewayPingMs} ms**`, inline: true  },
@@ -98,7 +148,8 @@ export function agentReplyEmbed(target: string, data: AgentReplyData): EmbedBuil
   const embed = base()
     .setColor(Colors.agent)
     .setTitle(`Agent · ${target}`)
-    .setDescription(replyText);
+    .setDescription(replyText)
+    .setThumbnail(iconUrl(_cdnBase, Icons.agent, colorToHex(Colors.agent)));
 
   if (data.usedTools.length > 0) {
     embed.addFields({
