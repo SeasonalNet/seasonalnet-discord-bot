@@ -2,7 +2,6 @@ import { SlashCommandBuilder } from 'discord.js';
 
 import type { ChatCommand } from '../../core/types.js';
 import type { AppContext } from '../../core/app-context.js';
-import { ensureScope } from '../../core/command-helpers.js';
 import { agentReplyEmbed } from '../../ui/embeds.js';
 import { askAgent, type AgentTarget } from './service.js';
 
@@ -30,8 +29,6 @@ const askCommand: ChatCommand = {
         .setMaxLength(1500),
     ),
   async execute(context: AppContext, interaction) {
-    ensureScope(context, interaction, 'agents.use');
-
     const target = interaction.options.getString('target', true) as AgentTarget;
     const question = interaction.options.getString('question', true).trim();
 

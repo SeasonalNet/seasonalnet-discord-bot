@@ -26,3 +26,22 @@ export class UpstreamServiceError extends BotError {
     this.statusCode = statusCode;
   }
 }
+
+
+export class GuildAccessError extends BotError {
+  constructor(guildId?: string) {
+    super(
+      'GUILD_ACCESS_DENIED',
+      guildId ? `Bot is not enabled in guild ${guildId}` : 'Bot is not enabled in this guild.',
+      guildId ? { guildId } : undefined,
+    );
+    this.name = 'GuildAccessError';
+  }
+}
+
+export class GuildOnlyError extends BotError {
+  constructor(commandName: string) {
+    super('GUILD_ONLY_COMMAND', `The ${commandName} command can only be used inside a guild.`, { commandName });
+    this.name = 'GuildOnlyError';
+  }
+}

@@ -69,8 +69,9 @@ cp config.yaml.example config.yaml
 
 - `SEASONALNET_BOT_TOKEN`
 - `SEASONALNET_BOT_CLIENT_ID`
-- optional `SEASONALNET_BOT_GUILD_ID`
+- `SEASONALNET_BOT_GUILD_ID`
 - `SEASONAL_AGENT_BOT_TOKEN`
+- real guild and role IDs in `config.yaml`
 
 3. Install dependencies and build.
 
@@ -79,11 +80,13 @@ npm install
 npm run build
 ```
 
-4. Deploy slash commands to one guild while developing.
+4. Deploy slash commands to the configured guild allowlist while developing.
 
 ```bash
 npm run deploy:commands
 ```
+
+Set `SEASONALNET_BOT_DEPLOY_GLOBAL=true` only when you explicitly want global command deployment.
 
 5. Start the bot.
 
@@ -96,6 +99,14 @@ npm run start
 - `config.yaml` holds non-secret runtime settings
 - `.env` holds secrets and environment-specific values
 - SQLite stores audit log and local bot state
+
+## Authorization model
+
+- command metadata declares the required scope
+- the core dispatcher enforces that scope before command execution
+- `allowed_guild_ids` gates which guilds may use the bot
+- scope grants should prefer `role_ids` over `role_names`
+- `moderation.manage` implies the concrete moderation scopes
 
 ## Included commands
 
@@ -139,6 +150,7 @@ The agent module expects a bot-scoped backend token and uses the bot chat route 
 - Prefer guild-scoped command deployment while testing.
 - Keep deterministic behavior in structured services, not in Discord handlers.
 - Treat the bot as a workflow front door, not a logic monolith.
+- Avoid Discord `Administrator` as a shortcut for bot scopes.
 
 ## Systemd
 

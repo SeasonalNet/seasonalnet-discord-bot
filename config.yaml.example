@@ -4,7 +4,8 @@ bot:
   guild_id_env: SEASONALNET_BOT_GUILD_ID
   activity: SeasonalNet workflows
   status: online
-  allowed_guild_ids: []
+  allowed_guild_ids:
+    - '123456789012345678'
 
 database:
   path: /var/lib/seasonalnet/discord-bot/bot.db
@@ -17,18 +18,18 @@ scopes:
     - utility.use
   grants:
     - match:
-        role_names:
-          - SeasonalNet Staff
+        guild_ids:
+          - '123456789012345678'
+        role_ids:
+          - '234567890123456789'
       scopes:
         - agents.use
         - moderation.manage
-        - moderation.timeout
-        - moderation.purge
-        - moderation.slowmode
-        - moderation.lock
     - match:
-        role_names:
-          - SeasonalNet Trusted
+        guild_ids:
+          - '123456789012345678'
+        role_ids:
+          - '345678901234567890'
       scopes:
         - agents.use
 

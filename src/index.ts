@@ -12,12 +12,19 @@ import { loadSettings, requireEnv } from './core/config.js';
 import { Logger } from './core/logger.js';
 import { CommandRegistry } from './core/command-registry.js';
 import { buildRequestContext } from './core/context.js';
-import { BotError, ScopeError, UpstreamServiceError } from './core/errors.js';
+import {
+  BotError,
+  GuildAccessError,
+  GuildOnlyError,
+  ScopeError,
+  UpstreamServiceError,
+} from './core/errors.js';
 import type { AppContext } from './core/app-context.js';
 import { Database } from './storage/database.js';
 import { SeasonalAgentClient } from './integrations/seasonal-agent.js';
 import { loadCommands } from './modules/index.js';
 import { errorEmbed, configureEmbeds } from './ui/embeds.js';
+import { ensureScope } from './core/command-helpers.js';
 
 async function main(): Promise<void> {
   const settings = loadSettings();
@@ -29,9 +36,9 @@ async function main(): Promise<void> {
   const botToken = requireEnv(settings.bot.token_env);
   const seasonalAgentToken = requireEnv(settings.integrations.seasonal_agent.bot_token_env);
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
-});
+  const client = new Client({
+    intents: [GatewayIntentBits.Guilds],
+  });
 
   const database = new Database(settings.database.path);
   const seasonalAgent = new SeasonalAgentClient(
@@ -86,6 +93,31 @@ const client = new Client({
   await client.login(botToken);
 }
 
+function assertGuildAccess(appContext: AppContext, interaction: ChatInputCommandInteraction): void {
+  const allowedGuildIds = appContext.settings.bot.allowed_guild_ids;
+  if (!interaction.guildId || allowedGuildIds.length === 0) {
+    return;
+  }
+
+  if (!allowedGuildIds.includes(interaction.guildId)) {
+    throw new GuildAccessError(interaction.guildId);
+  }
+}
+
+function assertCommandAccess(
+  appContext: AppContext,
+  interaction: ChatInputCommandInteraction,
+  requiredScope: string,
+  guildOnly = false,
+): void {
+  if (guildOnly && !interaction.inGuild()) {
+    throw new GuildOnlyError(interaction.commandName);
+  }
+
+  assertGuildAccess(appContext, interaction);
+  ensureScope(appContext, interaction, requiredScope);
+}
+
 async function handleChatCommand(
   appContext: AppContext,
   registry: CommandRegistry,
@@ -100,15 +132,8 @@ async function handleChatCommand(
     return;
   }
 
-  if (command.guildOnly && !interaction.inGuild()) {
-    await interaction.reply({
-      content: 'That command can only be used inside a guild.',
-      ephemeral: true,
-    });
-    return;
-  }
-
   try {
+    assertCommandAccess(appContext, interaction, command.scope, command.guildOnly ?? false);
     await command.execute(appContext, interaction);
 
     appContext.database.logCommand({
@@ -180,6 +205,24 @@ function normalizeError(error: unknown): {
       code: error.code,
       message: error.message,
       userMessage: 'You do not have the required scope for that command.',
+      details: error.details,
+    };
+  }
+
+  if (error instanceof GuildAccessError) {
+    return {
+      code: error.code,
+      message: error.message,
+      userMessage: 'This bot is not enabled in this guild.',
+      details: error.details,
+    };
+  }
+
+  if (error instanceof GuildOnlyError) {
+    return {
+      code: error.code,
+      message: error.message,
+      userMessage: 'That command can only be used inside a guild.',
       details: error.details,
     };
   }

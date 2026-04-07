@@ -6,6 +6,7 @@ import { config as loadDotEnv } from 'dotenv';
 import YAML from 'yaml';
 
 export interface ScopeGrantMatch {
+  guild_ids?: string[];
   role_ids?: string[];
   role_names?: string[];
 }

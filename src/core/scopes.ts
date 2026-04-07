@@ -1,9 +1,14 @@
-import type { GuildMember } from 'discord.js';
+import { GuildMember, type ChatInputCommandInteraction } from 'discord.js';
 
 import type { ScopeGrant, Settings } from './config.js';
 
 function grantMatches(grant: ScopeGrant, member: GuildMember | null): boolean {
   if (!member) {
+    return false;
+  }
+
+  const guildIds = grant.match.guild_ids ?? [];
+  if (guildIds.length > 0 && !guildIds.includes(member.guild.id)) {
     return false;
   }
 
@@ -16,13 +21,17 @@ function grantMatches(grant: ScopeGrant, member: GuildMember | null): boolean {
   return wantsRoleId || wantsRoleName;
 }
 
+const IMPLIED_SCOPES: Record<string, string[]> = {
+  'moderation.manage': [
+    'moderation.lock',
+    'moderation.slowmode',
+    'moderation.purge',
+    'moderation.timeout',
+  ],
+};
+
 export function resolveScopes(settings: Settings, member: GuildMember | null): Set<string> {
   const scopes = new Set<string>(settings.scopes.defaults);
-
-  if (member?.permissions.has('Administrator')) {
-    scopes.add('*');
-    return scopes;
-  }
 
   for (const grant of settings.scopes.grants) {
     if (grantMatches(grant, member)) {
@@ -35,6 +44,18 @@ export function resolveScopes(settings: Settings, member: GuildMember | null): S
   return scopes;
 }
 
+export function resolveInteractionScopes(
+  settings: Settings,
+  interaction: ChatInputCommandInteraction,
+): Set<string> {
+  const member = interaction.member instanceof GuildMember ? interaction.member : null;
+  return resolveScopes(settings, member);
+}
+
 export function hasScope(scopes: Set<string>, requiredScope: string): boolean {
-  return scopes.has('*') || scopes.has(requiredScope);
+  if (scopes.has('*') || scopes.has(requiredScope)) {
+    return true;
+  }
+
+  return [...scopes].some((scope) => (IMPLIED_SCOPES[scope] ?? []).includes(requiredScope));
 }

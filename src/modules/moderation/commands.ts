@@ -7,7 +7,7 @@ import {
 
 import type { ChatCommand } from '../../core/types.js';
 import type { AppContext } from '../../core/app-context.js';
-import { ensureDiscordPermission, ensureScope, DiscordPermissions } from '../../core/command-helpers.js';
+import { ensureDiscordPermission, DiscordPermissions } from '../../core/command-helpers.js';
 import { successEmbed } from '../../ui/embeds.js';
 
 function requireGuildTextChannel(interaction: Parameters<ChatCommand['execute']>[1]): TextChannel {
@@ -48,7 +48,6 @@ const lockCommand: ChatCommand = {
       option.setName('reason').setDescription('Optional reason shown in audit logs.').setRequired(false),
     ),
   async execute(context, interaction) {
-    ensureScope(context, interaction, 'moderation.lock');
     ensureDiscordPermission(interaction, DiscordPermissions.ManageChannels, 'You need Manage Channels to use /lock.');
 
     const channel = requireGuildTextChannel(interaction);
@@ -78,7 +77,6 @@ const unlockCommand: ChatCommand = {
       option.setName('reason').setDescription('Optional reason shown in audit logs.').setRequired(false),
     ),
   async execute(context, interaction) {
-    ensureScope(context, interaction, 'moderation.lock');
     ensureDiscordPermission(interaction, DiscordPermissions.ManageChannels, 'You need Manage Channels to use /unlock.');
 
     const channel = requireGuildTextChannel(interaction);
@@ -113,7 +111,6 @@ const slowmodeCommand: ChatCommand = {
         .setRequired(true),
     ),
   async execute(context, interaction) {
-    ensureScope(context, interaction, 'moderation.slowmode');
     ensureDiscordPermission(interaction, DiscordPermissions.ManageChannels, 'You need Manage Channels to use /slowmode.');
 
     const channel = requireGuildTextChannel(interaction);
@@ -143,7 +140,6 @@ const purgeCommand: ChatCommand = {
         .setRequired(true),
     ),
   async execute(context, interaction) {
-    ensureScope(context, interaction, 'moderation.purge');
     ensureDiscordPermission(interaction, DiscordPermissions.ManageMessages, 'You need Manage Messages to use /purge.');
 
     const channel = requireGuildTextChannel(interaction);
@@ -185,7 +181,6 @@ const timeoutCommand: ChatCommand = {
       option.setName('reason').setDescription('Reason for the timeout.').setRequired(false),
     ),
   async execute(context, interaction) {
-    ensureScope(context, interaction, 'moderation.timeout');
     ensureDiscordPermission(interaction, DiscordPermissions.ModerateMembers, 'You need Moderate Members to use /timeout.');
 
     const targetUser = interaction.options.getUser('user', true);
