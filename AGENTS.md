@@ -148,6 +148,14 @@ Answer first, optional detail second.
 
 Avoid giant walls of text when replying in Discord.
 
+## Embed policy
+
+1. All user-visible bot replies, notices, and errors must be sent as embeds.
+2. Direct-message moderation notices must always be embeds, never plain-text bodies.
+3. Prefer the standard factories in `src/ui/embeds.ts`.
+4. If no standard factory fits, add or use a specific CDN-backed Lucide icon instead of falling back to bare text.
+5. Moderation actions should use moderation-specific embed styling and icons rather than generic success/info styling.
+
 ## Logging guidance
 
 Record:

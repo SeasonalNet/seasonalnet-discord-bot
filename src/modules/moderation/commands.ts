@@ -2,7 +2,7 @@ import {
   ChannelType,
   Guild,
   GuildMember,
-  SlashCommandBuilder,
+    SlashCommandBuilder,
   TextChannel,
   User,
 } from 'discord.js';
@@ -10,7 +10,7 @@ import {
 import type { ChatCommand } from '../../core/types.js';
 import type { AppContext } from '../../core/app-context.js';
 import { ensureDiscordPermission, DiscordPermissions } from '../../core/command-helpers.js';
-import { infoEmbed, successEmbed } from '../../ui/embeds.js';
+import { moderationActionEmbed } from '../../ui/embeds.js';
 import { sendModerationNotice } from './notices.js';
 import type { ModerationActionRecord } from '../../storage/database.js';
 import type { ModerationNoticeAction } from '../../core/config.js';
@@ -193,7 +193,7 @@ const lockCommand: ChatCommand = {
     await recordModerationAction(context, interaction, 'lock', null, { reason });
 
     await interaction.reply({
-      embeds: [successEmbed('Channel Locked', `Locked ${channel}.\nReason: **${reason}**`)],
+      embeds: [moderationActionEmbed('lock', 'Channel Locked', `Locked ${channel}.\nReason: **${reason}**`)],
     });
   },
 };
@@ -222,7 +222,7 @@ const unlockCommand: ChatCommand = {
     await recordModerationAction(context, interaction, 'unlock', null, { reason });
 
     await interaction.reply({
-      embeds: [successEmbed('Channel Unlocked', `Unlocked ${channel}.\nReason: **${reason}**`)],
+      embeds: [moderationActionEmbed('unlock', 'Channel Unlocked', `Unlocked ${channel}.\nReason: **${reason}**`)],
     });
   },
 };
@@ -252,7 +252,7 @@ const slowmodeCommand: ChatCommand = {
 
     const summary = seconds === 0 ? 'Slowmode disabled.' : `Slowmode set to **${seconds} seconds**.`;
     await interaction.reply({
-      embeds: [successEmbed('Slowmode Updated', summary)],
+      embeds: [moderationActionEmbed('slowmode', 'Slowmode Updated', summary)],
     });
   },
 };
@@ -285,8 +285,8 @@ const purgeCommand: ChatCommand = {
     await recordModerationAction(context, interaction, 'purge', null, { requested: count, deleted: deleted.size });
 
     await interaction.reply({
-      embeds: [successEmbed('Messages Purged', `Deleted **${deleted.size}** recent messages.`)],
-      ephemeral: true,
+      embeds: [moderationActionEmbed('purge', 'Messages Purged', `Deleted **${deleted.size}** recent messages.`)],
+      flags: 'Ephemeral',
     });
   },
 };
@@ -315,12 +315,13 @@ const warnCommand: ChatCommand = {
 
     await interaction.reply({
       embeds: [
-        successEmbed(
+        moderationActionEmbed(
+          'warn',
           'Warning Recorded',
           `${targetUser} was warned.\nCase: **#${result.caseId}**\nReason: **${reason}**\n${describeNoticeResult(result.notice)}`,
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -349,12 +350,13 @@ const noteCommand: ChatCommand = {
 
     await interaction.reply({
       embeds: [
-        successEmbed(
+        moderationActionEmbed(
+          'note',
           'Moderator Note Recorded',
           `${targetUser} now has a moderator note.\nCase: **#${result.caseId}**\nNote: **${reason}**\n${describeNoticeResult(result.notice)}`,
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -381,12 +383,13 @@ const historyCommand: ChatCommand = {
 
     await interaction.reply({
       embeds: [
-        infoEmbed(
+        moderationActionEmbed(
+          'history',
           `Moderation History · ${targetUser.tag}`,
           ['```text', buildHistoryLines(records), '```'].join('\n'),
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -411,8 +414,8 @@ const caseCommand: ChatCommand = {
     }
 
     await interaction.reply({
-      embeds: [infoEmbed(`Moderation Case #${caseId}`, buildCaseDetails(record))],
-      ephemeral: true,
+      embeds: [moderationActionEmbed('case', `Moderation Case #${caseId}`, buildCaseDetails(record))],
+      flags: 'Ephemeral',
     });
   },
 };
@@ -459,12 +462,13 @@ const timeoutCommand: ChatCommand = {
 
     await interaction.reply({
       embeds: [
-        successEmbed(
+        moderationActionEmbed(
+          'timeout',
           'Member Timed Out',
           `${targetUser} has been timed out for **${minutes} minutes**.\nCase: **#${result.caseId}**\nReason: **${reason}**\n${describeNoticeResult(result.notice)}`,
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -501,12 +505,13 @@ const untimeoutCommand: ChatCommand = {
 
     await interaction.reply({
       embeds: [
-        successEmbed(
+        moderationActionEmbed(
+          'untimeout',
           'Timeout Cleared',
           `${targetUser}'s timeout was cleared.\nCase: **#${result.caseId}**\nReason: **${reason}**\n${describeNoticeResult(result.notice)}`,
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -543,12 +548,13 @@ const kickCommand: ChatCommand = {
 
     await interaction.reply({
       embeds: [
-        successEmbed(
+        moderationActionEmbed(
+          'kick',
           'Member Kicked',
           `${targetUser.tag} was kicked.\nCase: **#${result.caseId}**\nReason: **${reason}**\n${describeNoticeResult(result.notice)}`,
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -597,12 +603,13 @@ const banCommand: ChatCommand = {
 
     await interaction.reply({
       embeds: [
-        successEmbed(
+        moderationActionEmbed(
+          'ban',
           'User Banned',
           `${targetUser.tag} was banned.\nCase: **#${result.caseId}**\nReason: **${reason}**\nDelete message days: **${deleteDays}**\n${describeNoticeResult(result.notice)}`,
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -636,12 +643,13 @@ const unbanCommand: ChatCommand = {
 
     await interaction.reply({
       embeds: [
-        successEmbed(
+        moderationActionEmbed(
+          'unban',
           'User Unbanned',
           `User ID \`${userId}\` was unbanned.\nCase: **#${result.caseId}**\nReason: **${reason}**\n${describeNoticeResult(result.notice)}`,
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };

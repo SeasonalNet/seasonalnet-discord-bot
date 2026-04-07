@@ -1,6 +1,7 @@
 import type { User } from 'discord.js';
 
 import type { Settings, ModerationNoticeAction } from '../../core/config.js';
+import { moderationNoticeEmbed } from '../../ui/embeds.js';
 
 export interface ModerationNoticeData {
   action: ModerationNoticeAction;
@@ -21,6 +22,12 @@ export interface ModerationNoticeAttempt {
   error?: string;
 }
 
+export interface ModerationNoticeContent {
+  title: string;
+  body: string;
+  footer?: string;
+}
+
 function fillTemplate(template: string, data: ModerationNoticeData): string {
   const values: Record<string, string> = {
     action: data.action,
@@ -38,7 +45,7 @@ function fillTemplate(template: string, data: ModerationNoticeData): string {
   return template.replace(/\{([a-z_]+)\}/g, (_match, token: string) => values[token] ?? `{${token}}`);
 }
 
-export function buildModerationNotice(settings: Settings, data: ModerationNoticeData): string | null {
+export function buildModerationNotice(settings: Settings, data: ModerationNoticeData): ModerationNoticeContent | null {
   const noticeSettings = settings.moderation.dm_notices;
   if (!noticeSettings.enabled) {
     return null;
@@ -49,16 +56,11 @@ export function buildModerationNotice(settings: Settings, data: ModerationNotice
     return null;
   }
 
-  const title = fillTemplate(template.title, data);
-  const body = fillTemplate(template.body, data);
-  const footer = noticeSettings.footer.trim();
-
-  return [
-    `**${title}**`,
-    '',
-    body,
-    ...(footer ? ['', footer] : []),
-  ].join('\n');
+  return {
+    title: fillTemplate(template.title, data),
+    body: fillTemplate(template.body, data),
+    footer: noticeSettings.footer.trim() || undefined,
+  };
 }
 
 export async function sendModerationNotice(
@@ -66,8 +68,8 @@ export async function sendModerationNotice(
   targetUser: User,
   data: ModerationNoticeData,
 ): Promise<ModerationNoticeAttempt> {
-  const content = buildModerationNotice(settings, data);
-  if (!content) {
+  const notice = buildModerationNotice(settings, data);
+  if (!notice) {
     return {
       attempted: false,
       delivered: false,
@@ -75,7 +77,12 @@ export async function sendModerationNotice(
   }
 
   try {
-    await targetUser.send({ content });
+    await targetUser.send({
+      embeds: [
+        moderationNoticeEmbed(data.action, notice.title, notice.body, notice.footer),
+      ],
+    });
+
     return {
       attempted: true,
       delivered: true,

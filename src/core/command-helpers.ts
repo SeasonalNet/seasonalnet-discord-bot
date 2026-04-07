@@ -1,7 +1,7 @@
 import {
   ChatInputCommandInteraction,
   GuildMember,
-  PermissionsBitField,
+    PermissionsBitField,
 } from 'discord.js';
 
 import { ScopeError } from './errors.js';
@@ -36,11 +36,11 @@ export function ensureDiscordPermission(
 
 export async function replyEphemeral(interaction: ChatInputCommandInteraction, content: string): Promise<void> {
   if (interaction.deferred || interaction.replied) {
-    await interaction.followUp({ content, ephemeral: true });
+    await interaction.followUp({ content, flags: 'Ephemeral' });
     return;
   }
 
-  await interaction.reply({ content, ephemeral: true });
+  await interaction.reply({ content, flags: 'Ephemeral' });
 }
 
 export const DiscordPermissions = PermissionsBitField.Flags;

@@ -1,4 +1,4 @@
-import { GuildMember, SlashCommandBuilder, type User } from 'discord.js';
+import { GuildMember, MessageFlags, SlashCommandBuilder, type User } from 'discord.js';
 
 import type { ChatCommand } from '../../core/types.js';
 import type { AppContext } from '../../core/app-context.js';
@@ -110,7 +110,7 @@ const helpCommand: ChatCommand = {
 
     await interaction.reply({
       embeds: [infoEmbed('SeasonalNet Bot Help', buildHelpSections(scopes).join('\n'))],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -129,7 +129,7 @@ const aboutCommand: ChatCommand = {
           'Shared SeasonalNet workflow bot for utility, moderation, and agent-assisted operations. Real business logic should stay in backend services, not inside Discord command handlers.',
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -144,7 +144,7 @@ const pingCommand: ChatCommand = {
     const gatewayLatency = interaction.client.ws.ping;
     await interaction.reply({
       embeds: [pingEmbed(gatewayLatency)],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -174,7 +174,7 @@ const whoamiCommand: ChatCommand = {
           ].join('\n'),
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -203,7 +203,7 @@ const healthCommand: ChatCommand = {
           agentStatus,
         }),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -237,7 +237,7 @@ const scopesCommand: ChatCommand = {
           ].join('\n'),
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -272,7 +272,7 @@ const auditCommand: ChatCommand = {
           ].join('\n'),
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -307,7 +307,7 @@ const modlogCommand: ChatCommand = {
           ].join('\n'),
         ),
       ],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };
@@ -321,7 +321,7 @@ const versionCommand: ChatCommand = {
   async execute(_context: AppContext, interaction) {
     await interaction.reply({
       embeds: [successEmbed('Version', 'SeasonalNet Discord Bot starter version **0.1.0**')],
-      ephemeral: true,
+      flags: 'Ephemeral',
     });
   },
 };

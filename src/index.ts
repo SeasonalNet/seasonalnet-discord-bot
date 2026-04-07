@@ -5,7 +5,7 @@ import {
   Client,
   Events,
   GatewayIntentBits,
-  type ChatInputCommandInteraction,
+    type ChatInputCommandInteraction,
 } from 'discord.js';
 
 import { loadSettings, requireEnv } from './core/config.js';
@@ -182,7 +182,7 @@ async function handleChatCommand(
 
     const replyPayload = {
       embeds: [errorEmbed('Command Failed', normalized.userMessage)],
-      ephemeral: true,
+      flags: ['Ephemeral'] as const,
     };
 
     if (interaction.deferred || interaction.replied) {
