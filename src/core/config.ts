@@ -31,14 +31,31 @@ export interface ModerationNoticeTemplate {
   body: string;
 }
 
+export type PresenceActivityType = 'Playing' | 'Watching' | 'Listening' | 'Competing';
+
+export interface PresenceActivityEntry {
+  type: PresenceActivityType;
+  /**
+   * Supports tokens: {guild_count}, {member_count}, {command_count}
+   */
+  name: string;
+}
+
+export interface PresenceConfig {
+  interval_ms: number;
+  activities: PresenceActivityEntry[];
+}
+
 export interface Settings {
   bot: {
     token_env: string;
     client_id_env: string;
     guild_id_env?: string;
-    activity: string;
     status: 'online' | 'idle' | 'dnd' | 'invisible';
     allowed_guild_ids: string[];
+    /** @deprecated Use bot.presence.activities instead. */
+    activity: string;
+    presence: PresenceConfig;
   };
   database: {
     path: string;
@@ -167,6 +184,13 @@ const DEFAULT_NOTICE_ACTIONS: Record<ModerationNoticeAction, ModerationNoticeTem
   },
 };
 
+const DEFAULT_PRESENCE: PresenceConfig = {
+  interval_ms: 30_000,
+  activities: [
+    { type: 'Watching', name: 'SeasonalNet' },
+  ],
+};
+
 const DEFAULTS: Settings = {
   bot: {
     token_env: 'SEASONALNET_BOT_TOKEN',
@@ -175,6 +199,7 @@ const DEFAULTS: Settings = {
     activity: 'SeasonalNet workflows',
     status: 'online',
     allowed_guild_ids: [],
+    presence: DEFAULT_PRESENCE,
   },
   database: {
     path: './var/seasonalnet_bot.db',
@@ -246,7 +271,18 @@ export function loadSettings(): Settings {
   const merged: Settings = {
     ...DEFAULTS,
     ...parsed,
-    bot: { ...DEFAULTS.bot, ...(parsed.bot ?? {}) },
+    bot: (() => {
+      const pb: Partial<Settings['bot']> = parsed.bot ?? {};
+      let presence: PresenceConfig;
+      if (pb.presence) {
+        presence = { interval_ms: pb.presence.interval_ms ?? DEFAULT_PRESENCE.interval_ms, activities: pb.presence.activities ?? DEFAULT_PRESENCE.activities };
+      } else if (pb.activity) {
+        presence = { interval_ms: DEFAULT_PRESENCE.interval_ms, activities: [{ type: 'Playing', name: pb.activity }] };
+      } else {
+        presence = DEFAULT_PRESENCE;
+      }
+      return { ...DEFAULTS.bot, ...pb, presence };
+    })(),
     database: { ...DEFAULTS.database, ...(parsed.database ?? {}) },
     logging: { ...DEFAULTS.logging, ...(parsed.logging ?? {}) },
     scopes: {

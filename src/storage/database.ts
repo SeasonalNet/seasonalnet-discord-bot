@@ -131,6 +131,11 @@ export class Database {
     return this.filePath;
   }
 
+  commandCount(): number {
+    const row = this.db.prepare('SELECT COUNT(*) AS n FROM command_audit').get() as { n: number } | undefined;
+    return row?.n ?? 0;
+  }
+
   close(): void {
     this.db.close();
   }

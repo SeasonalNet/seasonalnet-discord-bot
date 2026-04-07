@@ -1,7 +1,6 @@
 import process from 'node:process';
 
 import {
-  ActivityType,
   Client,
   Events,
   GatewayIntentBits,
@@ -25,6 +24,7 @@ import { SeasonalAgentClient } from './integrations/seasonal-agent.js';
 import { loadCommands } from './modules/index.js';
 import { errorEmbed, configureEmbeds } from './ui/embeds.js';
 import { ensureScope } from './core/command-helpers.js';
+import { PresenceRotator } from './core/presence.js';
 
 async function main(): Promise<void> {
   const settings = loadSettings();
@@ -60,16 +60,22 @@ async function main(): Promise<void> {
     registry.register(command);
   }
 
+  const rotator = new PresenceRotator(
+    settings.bot.presence.activities,
+    settings.bot.presence.interval_ms,
+    client,
+    database,
+    logger,
+  );
+
   client.once(Events.ClientReady, (readyClient) => {
     logger.info('Discord bot ready.', {
       user: readyClient.user.tag,
       guilds: readyClient.guilds.cache.size,
     });
 
-    readyClient.user.setPresence({
-      activities: [{ name: settings.bot.activity, type: ActivityType.Playing }],
-      status: settings.bot.status,
-    });
+    readyClient.user.setStatus(settings.bot.status);
+    rotator.start();
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {
@@ -82,6 +88,7 @@ async function main(): Promise<void> {
 
   const shutdown = async (signal: string) => {
     logger.info('Shutting down.', { signal });
+    rotator.stop();
     database.close();
     client.destroy();
     process.exit(0);
