@@ -1,19 +1,28 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { GuildMember, SlashCommandBuilder, type User } from 'discord.js';
 
 import type { ChatCommand } from '../../core/types.js';
 import type { AppContext } from '../../core/app-context.js';
-import { getInteractionScopes } from '../../core/command-helpers.js';
-import { hasScope } from '../../core/scopes.js';
+import { getGuildMember, getInteractionScopes } from '../../core/command-helpers.js';
+import { hasScope, resolveScopes } from '../../core/scopes.js';
 import { infoEmbed, successEmbed, pingEmbed, healthEmbed } from '../../ui/embeds.js';
+import type { CommandAuditRecord, ModerationActionRecord } from '../../storage/database.js';
 
 function buildHelpSections(scopes: Set<string>): string[] {
   const lines = [
     '**Utility**',
-    '`/help`, `/about`, `/ping`, `/health`, `/version`',
+    '`/help`, `/about`, `/ping`, `/version`, `/whoami`',
   ];
 
-  if (hasScope(scopes, 'moderation.lock')) {
-    lines.push('', '**Moderation**', '`/lock`, `/unlock`, `/slowmode`, `/purge`, `/timeout`');
+  if (hasScope(scopes, 'utility.inspect')) {
+    lines.push('', '**Utility · Inspect**', '`/health`, `/scopes`, `/audit`, `/modlog`');
+  }
+
+  if (hasScope(scopes, 'moderation.manage')) {
+    lines.push('', '**Moderation**', '`/lock`, `/unlock`, `/slowmode`, `/purge`, `/timeout`, `/untimeout`, `/warn`, `/note`, `/history`, `/case`');
+  }
+
+  if (hasScope(scopes, 'moderation.member')) {
+    lines.push('', '**Moderation · Member actions**', '`/kick`, `/ban`, `/unban`');
   }
 
   if (hasScope(scopes, 'agents.use')) {
@@ -22,6 +31,72 @@ function buildHelpSections(scopes: Set<string>): string[] {
 
   lines.push('', 'Configured scopes are enforced centrally by the bot runtime.');
   return lines;
+}
+
+function formatScopeList(scopes: Set<string>): string {
+  const values = [...scopes].sort();
+  return values.length > 0 ? values.map((scope) => `- \`${scope}\``).join('\n') : '- *(none)*';
+}
+
+function summarizeRoles(member: GuildMember | null): string {
+  if (!member) {
+    return 'Direct message or unresolved guild member.';
+  }
+
+  const roleNames = member.roles.cache
+    .filter((role) => role.id !== member.guild.id)
+    .map((role) => role.name)
+    .sort((a, b) => a.localeCompare(b));
+
+  return roleNames.length > 0 ? roleNames.join(', ') : 'No non-@everyone roles';
+}
+
+function formatCommandAudit(records: CommandAuditRecord[]): string {
+  if (records.length === 0) {
+    return 'No command audit records found.';
+  }
+
+  return records.map((record) => {
+    const status = record.success ? 'ok' : `fail:${record.errorCode ?? 'error'}`;
+    return `#${record.id} · /${record.commandName} · ${record.username} · ${status} · ${record.latencyMs}ms · ${record.createdAt}`;
+  }).join('\n');
+}
+
+function parseActionReason(record: ModerationActionRecord): string {
+  if (!record.detailsJson) {
+    return 'No reason recorded.';
+  }
+
+  try {
+    const parsed = JSON.parse(record.detailsJson) as { reason?: unknown };
+    return typeof parsed.reason === 'string' && parsed.reason.trim() ? parsed.reason : 'No reason recorded.';
+  } catch {
+    return 'No reason recorded.';
+  }
+}
+
+function formatModerationActions(records: ModerationActionRecord[]): string {
+  if (records.length === 0) {
+    return 'No moderation records found.';
+  }
+
+  return records.map((record) => {
+    const target = record.targetUsername ?? record.targetUserId ?? 'n/a';
+    return `#${record.id} · ${record.actionName} · target:${target} · actor:${record.username} · ${record.createdAt}`;
+  }).join('\n');
+}
+
+async function resolveOptionalTargetMember(
+  interaction: Parameters<ChatCommand['execute']>[1],
+): Promise<{ member: GuildMember | null; user: User | null }> {
+  const targetUser = interaction.options.getUser('user');
+  if (!targetUser || !interaction.guild) {
+    return { member: null, user: targetUser ?? null };
+  }
+
+  const member = interaction.guild.members.cache.get(targetUser.id)
+    ?? await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+  return { member, user: targetUser };
 }
 
 const helpCommand: ChatCommand = {
@@ -74,20 +149,163 @@ const pingCommand: ChatCommand = {
   },
 };
 
+const whoamiCommand: ChatCommand = {
+  name: 'whoami',
+  scope: 'utility.use',
+  guildOnly: true,
+  data: new SlashCommandBuilder()
+    .setName('whoami')
+    .setDescription('Show your effective SeasonalNet bot scopes in this guild.'),
+  async execute(context: AppContext, interaction) {
+    const member = getGuildMember(interaction);
+    const scopes = getInteractionScopes(context, interaction);
+
+    await interaction.reply({
+      embeds: [
+        infoEmbed(
+          'Who Am I',
+          [
+            `User: **${interaction.user.tag}** (\`${interaction.user.id}\`)`,
+            `Guild: **${interaction.guild?.name ?? 'Unknown'}**`,
+            `Roles: ${summarizeRoles(member)}`,
+            '',
+            '**Effective scopes**',
+            formatScopeList(scopes),
+          ].join('\n'),
+        ),
+      ],
+      ephemeral: true,
+    });
+  },
+};
+
 const healthCommand: ChatCommand = {
   name: 'health',
-  scope: 'utility.use',
+  scope: 'utility.inspect',
   data: new SlashCommandBuilder()
     .setName('health')
-    .setDescription('Show basic bot health information.'),
+    .setDescription('Show bot health information and upstream reachability.'),
   async execute(context: AppContext, interaction) {
+    let agentStatus: 'ok' | 'error' | 'disabled' = 'disabled';
+    if (context.settings.integrations.seasonal_agent.enabled) {
+      try {
+        agentStatus = await context.seasonalAgent.health();
+      } catch {
+        agentStatus = 'error';
+      }
+    }
+
     await interaction.reply({
       embeds: [
         healthEmbed({
           gatewayPingMs: interaction.client.ws.ping,
           dbPath: context.settings.database.path,
-          agentStatus: context.settings.integrations.seasonal_agent.enabled ? 'ok' : 'disabled',
+          agentStatus,
         }),
+      ],
+      ephemeral: true,
+    });
+  },
+};
+
+const scopesCommand: ChatCommand = {
+  name: 'scopes',
+  scope: 'utility.inspect',
+  guildOnly: true,
+  data: new SlashCommandBuilder()
+    .setName('scopes')
+    .setDescription('Show effective bot scopes for yourself or another guild member.')
+    .addUserOption((option) =>
+      option.setName('user').setDescription('Optional user to inspect.').setRequired(false),
+    ),
+  async execute(context: AppContext, interaction) {
+    const { member, user } = await resolveOptionalTargetMember(interaction);
+    const effectiveUser = user ?? interaction.user;
+    const effectiveMember = member ?? getGuildMember(interaction);
+    const scopes = resolveScopes(context.settings, effectiveMember);
+
+    await interaction.reply({
+      embeds: [
+        infoEmbed(
+          'Scope Inspection',
+          [
+            `User: **${effectiveUser.tag}** (\`${effectiveUser.id}\`)`,
+            `Roles: ${summarizeRoles(effectiveMember)}`,
+            '',
+            '**Effective scopes**',
+            formatScopeList(scopes),
+          ].join('\n'),
+        ),
+      ],
+      ephemeral: true,
+    });
+  },
+};
+
+const auditCommand: ChatCommand = {
+  name: 'audit',
+  scope: 'utility.inspect',
+  data: new SlashCommandBuilder()
+    .setName('audit')
+    .setDescription('Show recent bot command audit events.')
+    .addIntegerOption((option) =>
+      option.setName('limit').setDescription('How many audit entries to show.').setMinValue(1).setMaxValue(10).setRequired(false),
+    )
+    .addUserOption((option) =>
+      option.setName('user').setDescription('Optional user to filter by.').setRequired(false),
+    ),
+  async execute(context: AppContext, interaction) {
+    const limit = interaction.options.getInteger('limit') ?? 5;
+    const targetUser = interaction.options.getUser('user');
+    const records = context.database.getRecentCommandAudit(limit, targetUser?.id);
+
+    await interaction.reply({
+      embeds: [
+        infoEmbed(
+          'Recent Command Audit',
+          [
+            targetUser ? `Filter: **${targetUser.tag}**` : 'Filter: **all users**',
+            '',
+            '```text',
+            formatCommandAudit(records),
+            '```',
+          ].join('\n'),
+        ),
+      ],
+      ephemeral: true,
+    });
+  },
+};
+
+const modlogCommand: ChatCommand = {
+  name: 'modlog',
+  scope: 'utility.inspect',
+  data: new SlashCommandBuilder()
+    .setName('modlog')
+    .setDescription('Show recent moderation action records.')
+    .addIntegerOption((option) =>
+      option.setName('limit').setDescription('How many moderation entries to show.').setMinValue(1).setMaxValue(10).setRequired(false),
+    )
+    .addUserOption((option) =>
+      option.setName('user').setDescription('Optional target user to filter by.').setRequired(false),
+    ),
+  async execute(context: AppContext, interaction) {
+    const limit = interaction.options.getInteger('limit') ?? 5;
+    const targetUser = interaction.options.getUser('user');
+    const records = context.database.getRecentModerationActions(limit, targetUser?.id);
+
+    await interaction.reply({
+      embeds: [
+        infoEmbed(
+          'Recent Moderation Log',
+          [
+            targetUser ? `Filter: **${targetUser.tag}**` : 'Filter: **all targets**',
+            '',
+            '```text',
+            formatModerationActions(records),
+            '```',
+          ].join('\n'),
+        ),
       ],
       ephemeral: true,
     });
@@ -112,6 +330,10 @@ export const utilityCommands: ChatCommand[] = [
   helpCommand,
   aboutCommand,
   pingCommand,
+  whoamiCommand,
   healthCommand,
+  scopesCommand,
+  auditCommand,
+  modlogCommand,
   versionCommand,
 ];

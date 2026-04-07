@@ -16,6 +16,21 @@ export interface ScopeGrant {
   scopes: string[];
 }
 
+export type ModerationNoticeAction =
+  | 'warn'
+  | 'note'
+  | 'timeout'
+  | 'untimeout'
+  | 'kick'
+  | 'ban'
+  | 'unban';
+
+export interface ModerationNoticeTemplate {
+  enabled: boolean;
+  title: string;
+  body: string;
+}
+
 export interface Settings {
   bot: {
     token_env: string;
@@ -52,12 +67,105 @@ export interface Settings {
     max_purge_count: number;
     lock_reason: string;
     unlock_reason: string;
+    dm_notices: {
+      enabled: boolean;
+      footer: string;
+      actions: Record<ModerationNoticeAction, ModerationNoticeTemplate>;
+    };
   };
   cdn: {
     /** Base URL for the SeasonalNet icon CDN. Defaults to https://cdn.seasonalnet.org */
     icon_base_url: string;
   };
 }
+
+const DEFAULT_NOTICE_ACTIONS: Record<ModerationNoticeAction, ModerationNoticeTemplate> = {
+  warn: {
+    enabled: true,
+    title: 'SeasonalNet moderation notice',
+    body: [
+      'A moderation action was recorded in **{guild_name}**.',
+      '',
+      'Action: **{action_label}**',
+      'Reason: {reason}',
+      'Moderator: {moderator_tag}',
+      'Case: #{case_id}',
+    ].join('\n'),
+  },
+  note: {
+    enabled: true,
+    title: 'SeasonalNet moderation note',
+    body: [
+      'A moderator recorded a note for your account in **{guild_name}**.',
+      '',
+      'Action: **{action_label}**',
+      'Reason: {reason}',
+      'Moderator: {moderator_tag}',
+      'Case: #{case_id}',
+    ].join('\n'),
+  },
+  timeout: {
+    enabled: true,
+    title: 'SeasonalNet timeout notice',
+    body: [
+      'You were timed out in **{guild_name}**.',
+      '',
+      'Action: **{action_label}**',
+      'Duration: {duration_minutes} minute(s)',
+      'Reason: {reason}',
+      'Moderator: {moderator_tag}',
+      'Case: #{case_id}',
+    ].join('\n'),
+  },
+  untimeout: {
+    enabled: true,
+    title: 'SeasonalNet timeout update',
+    body: [
+      'Your timeout in **{guild_name}** was cleared.',
+      '',
+      'Action: **{action_label}**',
+      'Reason: {reason}',
+      'Moderator: {moderator_tag}',
+      'Case: #{case_id}',
+    ].join('\n'),
+  },
+  kick: {
+    enabled: true,
+    title: 'SeasonalNet removal notice',
+    body: [
+      'You were removed from **{guild_name}**.',
+      '',
+      'Action: **{action_label}**',
+      'Reason: {reason}',
+      'Moderator: {moderator_tag}',
+      'Case: #{case_id}',
+    ].join('\n'),
+  },
+  ban: {
+    enabled: true,
+    title: 'SeasonalNet ban notice',
+    body: [
+      'You were banned from **{guild_name}**.',
+      '',
+      'Action: **{action_label}**',
+      'Reason: {reason}',
+      'Moderator: {moderator_tag}',
+      'Case: #{case_id}',
+    ].join('\n'),
+  },
+  unban: {
+    enabled: true,
+    title: 'SeasonalNet unban notice',
+    body: [
+      'Your ban in **{guild_name}** was lifted.',
+      '',
+      'Action: **{action_label}**',
+      'Reason: {reason}',
+      'Moderator: {moderator_tag}',
+      'Case: #{case_id}',
+    ].join('\n'),
+  },
+};
 
 const DEFAULTS: Settings = {
   bot: {
@@ -95,6 +203,11 @@ const DEFAULTS: Settings = {
     max_purge_count: 100,
     lock_reason: 'Locked by SeasonalNet bot',
     unlock_reason: 'Unlocked by SeasonalNet bot',
+    dm_notices: {
+      enabled: true,
+      footer: 'If you believe this action was made in error, contact the server staff.',
+      actions: DEFAULT_NOTICE_ACTIONS,
+    },
   },
   cdn: {
     icon_base_url: 'https://cdn.seasonalnet.org',
@@ -104,6 +217,20 @@ const DEFAULTS: Settings = {
 export function resolveConfigPath(): string {
   const fromEnv = process.env.SEASONALNET_BOT_CONFIG;
   return path.resolve(fromEnv ?? './config.yaml');
+}
+
+function mergeNoticeActions(
+  parsedActions: Partial<Record<ModerationNoticeAction, Partial<ModerationNoticeTemplate>>> | undefined,
+): Record<ModerationNoticeAction, ModerationNoticeTemplate> {
+  return {
+    warn: { ...DEFAULT_NOTICE_ACTIONS.warn, ...(parsedActions?.warn ?? {}) },
+    note: { ...DEFAULT_NOTICE_ACTIONS.note, ...(parsedActions?.note ?? {}) },
+    timeout: { ...DEFAULT_NOTICE_ACTIONS.timeout, ...(parsedActions?.timeout ?? {}) },
+    untimeout: { ...DEFAULT_NOTICE_ACTIONS.untimeout, ...(parsedActions?.untimeout ?? {}) },
+    kick: { ...DEFAULT_NOTICE_ACTIONS.kick, ...(parsedActions?.kick ?? {}) },
+    ban: { ...DEFAULT_NOTICE_ACTIONS.ban, ...(parsedActions?.ban ?? {}) },
+    unban: { ...DEFAULT_NOTICE_ACTIONS.unban, ...(parsedActions?.unban ?? {}) },
+  };
 }
 
 export function loadSettings(): Settings {
@@ -133,7 +260,15 @@ export function loadSettings(): Settings {
       },
     },
     agents: { ...DEFAULTS.agents, ...(parsed.agents ?? {}) },
-    moderation: { ...DEFAULTS.moderation, ...(parsed.moderation ?? {}) },
+    moderation: {
+      ...DEFAULTS.moderation,
+      ...(parsed.moderation ?? {}),
+      dm_notices: {
+        ...DEFAULTS.moderation.dm_notices,
+        ...(parsed.moderation?.dm_notices ?? {}),
+        actions: mergeNoticeActions(parsed.moderation?.dm_notices?.actions),
+      },
+    },
     cdn: { ...DEFAULTS.cdn, ...(parsed.cdn ?? {}) },
   };
 
