@@ -614,6 +614,71 @@ const banCommand: ChatCommand = {
   },
 };
 
+const softbanCommand: ChatCommand = {
+  name: 'softban',
+  scope: 'moderation.member',
+  guildOnly: true,
+  data: new SlashCommandBuilder()
+    .setName('softban')
+    .setDescription('Softban a guild member: ban to purge message history, then immediately unban.')
+    .addUserOption((option) =>
+      option.setName('user').setDescription('The user to softban.').setRequired(true),
+    )
+    .addIntegerOption((option) =>
+      option
+        .setName('delete_days')
+        .setDescription('How many days of message history to delete (0-7, default 1).')
+        .setMinValue(0)
+        .setMaxValue(7)
+        .setRequired(false),
+    )
+    .addStringOption((option) =>
+      option.setName('reason').setDescription('Reason for the softban.').setRequired(false),
+    ),
+  async execute(context, interaction) {
+    ensureDiscordPermission(interaction, DiscordPermissions.BanMembers, 'You need Ban Members to use /softban.');
+
+    const guild = requireGuild(interaction);
+    const targetUser = interaction.options.getUser('user', true);
+    ensureNotSelfOrBot(interaction, targetUser);
+
+    const deleteDays = interaction.options.getInteger('delete_days') ?? 1;
+    const reason = interaction.options.getString('reason') ?? 'Softbanned by SeasonalNet bot';
+
+    const member = await resolveGuildMember(guild, targetUser.id);
+    if (member) {
+      assertManageableMember(member, 'ban');
+    }
+
+    await guild.bans.create(targetUser.id, {
+      reason,
+      deleteMessageSeconds: deleteDays * 86_400,
+    });
+    await guild.bans.remove(targetUser.id, `Softban unban: ${reason}`);
+
+    const result = await recordModerationAction(
+      context,
+      interaction,
+      'softban',
+      targetUser,
+      { reason, delete_days: deleteDays },
+      'softban',
+    );
+
+    await interaction.reply({
+      embeds: [
+        moderationActionEmbed(
+          'softban',
+          'User Softbanned',
+          `${targetUser.tag} was softbanned.\nCase: **#${result.caseId}**\nReason: **${reason}**\nDelete message days: **${deleteDays}**\n${describeNoticeResult(result.notice)}`,
+        ),
+      ],
+      flags: 'Ephemeral',
+    });
+  },
+};
+
+
 const unbanCommand: ChatCommand = {
   name: 'unban',
   scope: 'moderation.member',
@@ -668,4 +733,5 @@ export const moderationCommands: ChatCommand[] = [
   kickCommand,
   banCommand,
   unbanCommand,
+  softbanCommand,
 ];

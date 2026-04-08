@@ -23,7 +23,8 @@ export type ModerationNoticeAction =
   | 'untimeout'
   | 'kick'
   | 'ban'
-  | 'unban';
+  | 'unban'
+  | 'softban';
 
 export interface ModerationNoticeTemplate {
   enabled: boolean;
@@ -182,6 +183,18 @@ const DEFAULT_NOTICE_ACTIONS: Record<ModerationNoticeAction, ModerationNoticeTem
       'Case: #{case_id}',
     ].join('\n'),
   },
+  softban: {
+    enabled: true,
+    title: 'SeasonalNet softban notice',
+    body: [
+      'You were softbanned from **{guild_name}**.',
+      '',
+      'Action: **{action_label}**',
+      'Reason: {reason}',
+      'Moderator: {moderator_tag}',
+      'Case: #{case_id}',
+    ].join('\n'),
+  },
 };
 
 const DEFAULT_PRESENCE: PresenceConfig = {
@@ -255,6 +268,7 @@ function mergeNoticeActions(
     kick: { ...DEFAULT_NOTICE_ACTIONS.kick, ...(parsedActions?.kick ?? {}) },
     ban: { ...DEFAULT_NOTICE_ACTIONS.ban, ...(parsedActions?.ban ?? {}) },
     unban: { ...DEFAULT_NOTICE_ACTIONS.unban, ...(parsedActions?.unban ?? {}) },
+    softban: { ...DEFAULT_NOTICE_ACTIONS.softban, ...(parsedActions?.softban ?? {}) },
   };
 }
 

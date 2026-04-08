@@ -33,6 +33,7 @@ const Icons = {
   kick: 'log-out',
   ban: 'shield-ban',
   unban: 'shield-check',
+  softban: 'shield-minus',
 } as const;
 
 const FOOTER_ICON_HEX = '8094A4';
@@ -73,6 +74,7 @@ const ModerationStyles: Record<ModerationEmbedKind, EmbedStyle> = {
   kick: { color: Colors.warning, icon: Icons.kick },
   ban: { color: Colors.error, icon: Icons.ban },
   unban: { color: Colors.success, icon: Icons.unban },
+  softban: { color: Colors.warning, icon: Icons.softban },
 };
 
 function truncateDescription(description: string): string {

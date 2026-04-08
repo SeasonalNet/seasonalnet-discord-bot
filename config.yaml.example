@@ -130,6 +130,15 @@ moderation:
           Reason: {reason}
           Moderator: {moderator_tag}
           Case: #{case_id}
+      softban:
+        title: SeasonalNet softban notice
+        body: |
+          You were softbanned from **{guild_name}**. Your recent messages were deleted, but you may rejoin at any time.
+
+          Action: **{action_label}**
+          Reason: {reason}
+          Moderator: {moderator_tag}
+          Case: #{case_id}
 
 cdn:
   # Base URL for the SeasonalNet icon CDN (Lucide icon PNG renderer).

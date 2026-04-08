@@ -22,7 +22,7 @@ function buildHelpSections(scopes: Set<string>): string[] {
   }
 
   if (hasScope(scopes, 'moderation.member')) {
-    lines.push('', '**Moderation · Member actions**', '`/kick`, `/ban`, `/unban`');
+    lines.push('', '**Moderation · Member actions**', '`/kick`, `/ban`, `/unban`, `/softban`');
   }
 
   if (hasScope(scopes, 'agents.use')) {
