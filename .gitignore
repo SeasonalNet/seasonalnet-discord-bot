@@ -30,3 +30,7 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# cutover junk
+*.bak
+*.bak.*
