@@ -4,6 +4,8 @@ export interface BotChatRequest {
   message: string;
   session_id: string;
   persist_history: boolean;
+  agent_profile?: string;
+  target?: string;
   user_id?: string;
   user_name?: string;
   channel_id?: string;
@@ -22,6 +24,8 @@ export interface BotChatResponse {
   used_tools: string[];
   created_at: string;
   model: string;
+  profile_id?: string;
+  profile_display_name?: string;
 }
 
 export class SeasonalAgentClient {

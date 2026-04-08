@@ -57,6 +57,7 @@ agents:
   max_question_length: 1500
   session_mode: per_user_in_channel
   default_target: seasonalnet
+  # Targets currently map directly to seasonal-agent profiles of the same id.
 
 moderation:
   max_purge_count: 100

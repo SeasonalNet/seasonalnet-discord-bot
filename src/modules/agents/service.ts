@@ -33,14 +33,22 @@ export async function askAgent(
     : undefined;
 
   return context.seasonalAgent.botChat({
-    message:      question,
-    session_id:   sessionId,
+    message: question,
+    session_id: sessionId,
     persist_history: true,
-    user_id:      interaction.user.id,
-    user_name:    interaction.user.username,
-    guild_id:     interaction.guildId ?? undefined,
-    guild_name:   interaction.guild?.name ?? undefined,
-    channel_id:   interaction.channelId ?? undefined,
+    target,
+    agent_profile: target,
+    user_id: interaction.user.id,
+    user_name: interaction.user.username,
+    guild_id: interaction.guildId ?? undefined,
+    guild_name: interaction.guild?.name ?? undefined,
+    channel_id: interaction.channelId ?? undefined,
     channel_name: channelName,
+    metadata: {
+      source: 'seasonalnet-discord-bot',
+      transport: 'discord-slash-command',
+      session_mode: context.settings.agents.session_mode,
+      requested_target: target,
+    },
   });
 }

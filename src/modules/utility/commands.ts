@@ -6,6 +6,7 @@ import { getGuildMember, getInteractionScopes } from '../../core/command-helpers
 import { hasScope, resolveScopes } from '../../core/scopes.js';
 import { infoEmbed, successEmbed, pingEmbed, healthEmbed } from '../../ui/embeds.js';
 import type { CommandAuditRecord, ModerationActionRecord } from '../../storage/database.js';
+import { BOT_VERSION } from '../../core/version.js';
 
 function buildHelpSections(scopes: Set<string>): string[] {
   const lines = [
@@ -320,7 +321,7 @@ const versionCommand: ChatCommand = {
     .setDescription('Show the current bot version.'),
   async execute(_context: AppContext, interaction) {
     await interaction.reply({
-      embeds: [successEmbed('Version', 'SeasonalNet Discord Bot starter version **0.1.0**')],
+      embeds: [successEmbed('Version', `SeasonalNet Discord Bot version **${BOT_VERSION}**`)],
       flags: 'Ephemeral',
     });
   },
