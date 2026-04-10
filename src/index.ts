@@ -21,7 +21,7 @@ import {
 import type { AppContext } from './core/app-context.js';
 import { Database } from './storage/database.js';
 import { SeasonalAgentClient } from './integrations/seasonal-agent.js';
-import { loadCommands } from './modules/index.js';
+import { loadModules } from './modules/index.js';
 import { errorEmbed, configureEmbeds } from './ui/embeds.js';
 import { ensureScope } from './core/command-helpers.js';
 import { PresenceRotator } from './core/presence.js';
@@ -37,7 +37,7 @@ async function main(): Promise<void> {
   const seasonalAgentToken = requireEnv(settings.integrations.seasonal_agent.bot_token_env);
 
   const client = new Client({
-    intents: [GatewayIntentBits.Guilds],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
   });
 
   const database = new Database(settings.database.path);
@@ -56,8 +56,13 @@ async function main(): Promise<void> {
   };
 
   const registry = new CommandRegistry();
-  for (const command of loadCommands(settings)) {
-    registry.register(command);
+  const modules = loadModules(settings);
+  for (const module of modules) {
+    for (const command of module.commands ?? []) {
+      registry.register(command);
+    }
+
+    module.register?.(appContext);
   }
 
   const rotator = new PresenceRotator(

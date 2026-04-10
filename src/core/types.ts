@@ -17,4 +17,10 @@ export interface ChatCommand {
   execute(context: AppContext, interaction: ChatInputCommandInteraction): Promise<void>;
 }
 
+export interface BotModule {
+  readonly name: string;
+  readonly commands?: readonly ChatCommand[];
+  register?(context: AppContext): void;
+}
+
 export type CommandJson = RESTPostAPIChatInputApplicationCommandsJSONBody;

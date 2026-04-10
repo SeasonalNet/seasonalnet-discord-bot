@@ -10,6 +10,7 @@ const Colors = {
   agent: 0x8b5cf6,
   warning: 0xfbbf24,
   moderation: 0x5865f2,
+  welcome: 0x10b981,
 } as const;
 
 const Icons = {
@@ -34,6 +35,8 @@ const Icons = {
   ban: 'shield-ban',
   unban: 'shield-check',
   softban: 'shield-minus',
+  welcome: 'party-popper',
+  welcomeFooter: 'badge-plus',
 } as const;
 
 const FOOTER_ICON_HEX = '8094A4';
@@ -133,6 +136,27 @@ export function customEmbed(
     color: options.color ?? Colors.info,
     icon: options.icon ?? Icons.info,
   });
+}
+
+export function welcomeEmbed(title: string, description: string, note?: string): EmbedBuilder {
+  const embed = styledEmbed(title, description, {
+    color: Colors.welcome,
+    icon: Icons.welcome,
+  });
+
+  if (note?.trim()) {
+    embed.addFields({
+      name: 'Server Note',
+      value: note.trim(),
+      inline: false,
+    });
+    embed.setAuthor({
+      name: 'Welcome',
+      iconURL: iconUrl(_cdnBase, Icons.welcomeFooter, colorToHex(Colors.welcome)),
+    });
+  }
+
+  return embed;
 }
 
 export function moderationActionEmbed(kind: ModerationEmbedKind, title: string, description: string): EmbedBuilder {

@@ -35,10 +35,10 @@ export interface ModerationNoticeTemplate {
 export type PresenceActivityType = 'Playing' | 'Watching' | 'Listening' | 'Competing';
 
 export interface PresenceActivityEntry {
-  type: PresenceActivityType;
   /**
    * Supports tokens: {guild_count}, {member_count}, {command_count}
    */
+  type: PresenceActivityType;
   name: string;
 }
 
@@ -52,6 +52,24 @@ export interface AgentTargetSettings {
   description: string;
   agent_profile: string;
   enabled: boolean;
+}
+
+export type WelcomeMode = 'channel' | 'dm' | 'channel_and_dm';
+
+export interface WelcomeGuildSettings {
+  enabled: boolean;
+  mode: WelcomeMode;
+  channel_id?: string;
+  mention_user: boolean;
+  delete_after_seconds: number;
+  title: string;
+  body: string;
+  footer: string;
+}
+
+export interface WelcomeConfig {
+  enabled: boolean;
+  guilds: Record<string, WelcomeGuildSettings>;
 }
 
 export interface Settings {
@@ -99,6 +117,7 @@ export interface Settings {
       actions: Record<ModerationNoticeAction, ModerationNoticeTemplate>;
     };
   };
+  welcome: WelcomeConfig;
   cdn: {
     /** Base URL for the SeasonalNet icon CDN. Defaults to https://cdn.seasonalnet.org */
     icon_base_url: string;
@@ -212,6 +231,22 @@ const DEFAULT_PRESENCE: PresenceConfig = {
   ],
 };
 
+const DEFAULT_WELCOME_GUILD: WelcomeGuildSettings = {
+  enabled: false,
+  mode: 'channel',
+  channel_id: undefined,
+  mention_user: true,
+  delete_after_seconds: 0,
+  title: 'Welcome to {guild_name}',
+  body: [
+    'Welcome, **{user_tag}**.',
+    '',
+    'Please read the server rules and information before chatting.',
+    'You are member **#{member_count}**.',
+  ].join('\n'),
+  footer: 'Enjoy your stay.',
+};
+
 const DEFAULTS: Settings = {
   bot: {
     token_env: 'SEASONALNET_BOT_TOKEN',
@@ -275,6 +310,10 @@ const DEFAULTS: Settings = {
       actions: DEFAULT_NOTICE_ACTIONS,
     },
   },
+  welcome: {
+    enabled: false,
+    guilds: {},
+  },
   cdn: {
     icon_base_url: 'https://cdn.seasonalnet.org',
   },
@@ -300,6 +339,24 @@ function mergeNoticeActions(
   };
 }
 
+function mergeWelcomeGuilds(
+  parsedGuilds: Record<string, Partial<WelcomeGuildSettings>> | undefined,
+): Record<string, WelcomeGuildSettings> {
+  if (!parsedGuilds) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(parsedGuilds).map(([guildId, value]) => [
+      guildId,
+      {
+        ...DEFAULT_WELCOME_GUILD,
+        ...value,
+      },
+    ]),
+  );
+}
+
 export function loadSettings(): Settings {
   loadDotEnv();
 
@@ -317,7 +374,10 @@ export function loadSettings(): Settings {
       const pb: Partial<Settings['bot']> = parsed.bot ?? {};
       let presence: PresenceConfig;
       if (pb.presence) {
-        presence = { interval_ms: pb.presence.interval_ms ?? DEFAULT_PRESENCE.interval_ms, activities: pb.presence.activities ?? DEFAULT_PRESENCE.activities };
+        presence = {
+          interval_ms: pb.presence.interval_ms ?? DEFAULT_PRESENCE.interval_ms,
+          activities: pb.presence.activities ?? DEFAULT_PRESENCE.activities,
+        };
       } else if (pb.activity) {
         presence = { interval_ms: DEFAULT_PRESENCE.interval_ms, activities: [{ type: 'Playing', name: pb.activity }] };
       } else {
@@ -354,6 +414,11 @@ export function loadSettings(): Settings {
         actions: mergeNoticeActions(parsed.moderation?.dm_notices?.actions),
       },
     },
+    welcome: {
+      ...DEFAULTS.welcome,
+      ...(parsed.welcome ?? {}),
+      guilds: mergeWelcomeGuilds(parsed.welcome?.guilds),
+    },
     cdn: { ...DEFAULTS.cdn, ...(parsed.cdn ?? {}) },
   };
 
@@ -373,6 +438,28 @@ export function loadSettings(): Settings {
 
     if (!target.agent_profile.trim()) {
       throw new Error(`Agent target ${targetId} must set a non-empty agent_profile.`);
+    }
+  }
+
+  for (const [guildId, guildSettings] of Object.entries(merged.welcome.guilds)) {
+    if (!/^\d{16,20}$/.test(guildId)) {
+      throw new Error(`Invalid welcome guild id: ${guildId}. Expected a Discord snowflake.`);
+    }
+
+    if (!guildSettings.enabled) {
+      continue;
+    }
+
+    if (!['channel', 'dm', 'channel_and_dm'].includes(guildSettings.mode)) {
+      throw new Error(`Invalid welcome mode for guild ${guildId}: ${guildSettings.mode}`);
+    }
+
+    if ((guildSettings.mode === 'channel' || guildSettings.mode === 'channel_and_dm') && !guildSettings.channel_id?.trim()) {
+      throw new Error(`Welcome guild ${guildId} must set channel_id when mode is channel or channel_and_dm.`);
+    }
+
+    if (guildSettings.delete_after_seconds < 0) {
+      throw new Error(`Welcome guild ${guildId} must not set a negative delete_after_seconds.`);
     }
   }
 

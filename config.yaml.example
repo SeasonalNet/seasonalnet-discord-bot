@@ -156,6 +156,24 @@ moderation:
           Moderator: {moderator_tag}
           Case: #{case_id}
 
+
+welcome:
+  enabled: false
+  guilds:
+    '123456789012345678':
+      enabled: true
+      mode: channel
+      channel_id: '123456789012345678'
+      mention_user: true
+      delete_after_seconds: 0
+      title: Welcome to {guild_name}
+      body: |
+        Welcome, **{user_tag}**.
+
+        Please read the server rules and information before chatting.
+        You are member **#{member_count}**.
+      footer: Enjoy your stay.
+
 cdn:
   # Base URL for the SeasonalNet icon CDN (Lucide icon PNG renderer).
   # Override only if running the CDN at a non-standard location.
