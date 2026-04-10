@@ -56,7 +56,7 @@ async function main(): Promise<void> {
   };
 
   const registry = new CommandRegistry();
-  for (const command of loadCommands()) {
+  for (const command of loadCommands(settings)) {
     registry.register(command);
   }
 

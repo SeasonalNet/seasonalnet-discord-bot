@@ -24,7 +24,7 @@ async function main(): Promise<void> {
   const clientId = requireEnv(settings.bot.client_id_env);
   const deployGlobal = process.env.SEASONALNET_BOT_DEPLOY_GLOBAL === 'true';
 
-  const commandPayload = loadCommands().map((command) => command.data.toJSON());
+  const commandPayload = loadCommands(settings).map((command) => command.data.toJSON());
   const rest = new REST().setToken(token);
   const guildIds = getTargetGuildIds(settings);
 

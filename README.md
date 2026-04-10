@@ -45,7 +45,7 @@ The bot keeps the Discord layer thin and pushes real business logic into backend
 
 ### Agents
 
-- `/ask target:<seasonalnet|homelab> question:<text>`
+- `/ask target:<configured target> question:<text>`
 
 ## Seasonal agent integration
 
@@ -55,3 +55,5 @@ The bot now sends explicit agent routing details upstream:
 - `target`
 - `agent_profile`
 - lightweight request metadata describing the Discord source
+
+Agent routing targets are configured in `config.yaml` under `agents.targets`. The shipped defaults are `seasonalnet`, `homelab`, and `repo`.

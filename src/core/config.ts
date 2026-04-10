@@ -47,6 +47,13 @@ export interface PresenceConfig {
   activities: PresenceActivityEntry[];
 }
 
+export interface AgentTargetSettings {
+  display_name: string;
+  description: string;
+  agent_profile: string;
+  enabled: boolean;
+}
+
 export interface Settings {
   bot: {
     token_env: string;
@@ -79,7 +86,8 @@ export interface Settings {
   agents: {
     max_question_length: number;
     session_mode: 'per_user_in_channel';
-    default_target: 'seasonalnet' | 'homelab';
+    default_target: string;
+    targets: Record<string, AgentTargetSettings>;
   };
   moderation: {
     max_purge_count: number;
@@ -236,6 +244,26 @@ const DEFAULTS: Settings = {
     max_question_length: 1500,
     session_mode: 'per_user_in_channel',
     default_target: 'seasonalnet',
+    targets: {
+      seasonalnet: {
+        display_name: 'SeasonalNet',
+        description: 'General SeasonalNet assistant workflows.',
+        agent_profile: 'seasonalnet',
+        enabled: true,
+      },
+      homelab: {
+        display_name: 'Homelab',
+        description: 'Homelab and infrastructure inspection workflows.',
+        agent_profile: 'homelab',
+        enabled: true,
+      },
+      repo: {
+        display_name: 'Repo',
+        description: 'Read-only repository inspection workflows.',
+        agent_profile: 'repo',
+        enabled: true,
+      },
+    },
   },
   moderation: {
     max_purge_count: 100,
@@ -309,7 +337,14 @@ export function loadSettings(): Settings {
         ...(parsed.integrations?.seasonal_agent ?? {}),
       },
     },
-    agents: { ...DEFAULTS.agents, ...(parsed.agents ?? {}) },
+    agents: {
+      ...DEFAULTS.agents,
+      ...(parsed.agents ?? {}),
+      targets: {
+        ...DEFAULTS.agents.targets,
+        ...(parsed.agents?.targets ?? {}),
+      },
+    },
     moderation: {
       ...DEFAULTS.moderation,
       ...(parsed.moderation ?? {}),
@@ -321,6 +356,25 @@ export function loadSettings(): Settings {
     },
     cdn: { ...DEFAULTS.cdn, ...(parsed.cdn ?? {}) },
   };
+
+  const enabledTargets = Object.entries(merged.agents.targets).filter(([, target]) => target.enabled);
+  if (enabledTargets.length === 0) {
+    throw new Error('At least one enabled agent target must be configured.');
+  }
+
+  if (!merged.agents.targets[merged.agents.default_target]?.enabled) {
+    throw new Error(`agents.default_target must reference an enabled target. Got: ${merged.agents.default_target}`);
+  }
+
+  for (const [targetId, target] of Object.entries(merged.agents.targets)) {
+    if (!/^[a-z0-9-]{1,32}$/.test(targetId)) {
+      throw new Error(`Invalid agent target id: ${targetId}. Use lowercase letters, numbers, and hyphens only.`);
+    }
+
+    if (!target.agent_profile.trim()) {
+      throw new Error(`Agent target ${targetId} must set a non-empty agent_profile.`);
+    }
+  }
 
   const levelOverride = process.env.SEASONALNET_BOT_LOG_LEVEL as Settings['logging']['level'] | undefined;
   if (levelOverride) {

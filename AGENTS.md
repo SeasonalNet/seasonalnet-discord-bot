@@ -47,3 +47,5 @@ When calling `seasonal-agent`, pass both:
 - `agent_profile` for the backend profile selection
 
 The Discord bot should not decide backend behavior by prompt text. It should route by explicit upstream fields.
+
+Agent routing targets should be config-driven. Do not hard-code target lists in slash command handlers when the backend can expose additional profiles over time.

@@ -57,7 +57,22 @@ agents:
   max_question_length: 1500
   session_mode: per_user_in_channel
   default_target: seasonalnet
-  # Targets currently map directly to seasonal-agent profiles of the same id.
+  targets:
+    seasonalnet:
+      display_name: SeasonalNet
+      description: General SeasonalNet assistant workflows.
+      agent_profile: seasonalnet
+      enabled: true
+    homelab:
+      display_name: Homelab
+      description: Homelab and infrastructure inspection workflows.
+      agent_profile: homelab
+      enabled: true
+    repo:
+      display_name: Repo
+      description: Read-only repository inspection workflows.
+      agent_profile: repo
+      enabled: true
 
 moderation:
   max_purge_count: 100
