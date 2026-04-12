@@ -187,6 +187,8 @@ const healthCommand: ChatCommand = {
     .setName('health')
     .setDescription('Show bot health information and upstream reachability.'),
   async execute(context: AppContext, interaction) {
+    await interaction.deferReply({ flags: 'Ephemeral' });
+
     let agentStatus: 'ok' | 'error' | 'disabled' = 'disabled';
     if (context.settings.integrations.seasonal_agent.enabled) {
       try {
@@ -196,7 +198,7 @@ const healthCommand: ChatCommand = {
       }
     }
 
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [
         healthEmbed({
           gatewayPingMs: interaction.client.ws.ping,
@@ -204,7 +206,6 @@ const healthCommand: ChatCommand = {
           agentStatus,
         }),
       ],
-      flags: 'Ephemeral',
     });
   },
 };

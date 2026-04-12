@@ -2,9 +2,11 @@ import process from 'node:process';
 
 import {
   Client,
+  DiscordAPIError,
   Events,
   GatewayIntentBits,
-    type ChatInputCommandInteraction,
+  type ChatInputCommandInteraction,
+  type InteractionReplyOptions,
 } from 'discord.js';
 
 import { loadSettings, requireEnv } from './core/config.js';
@@ -25,6 +27,109 @@ import { loadModules } from './modules/index.js';
 import { errorEmbed, configureEmbeds } from './ui/embeds.js';
 import { ensureScope } from './core/command-helpers.js';
 import { PresenceRotator } from './core/presence.js';
+
+const TRANSIENT_NETWORK_ERROR_CODES = new Set([
+  'EAI_AGAIN',
+  'ENOTFOUND',
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+]);
+
+function getErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object' || !('code' in error)) {
+    return undefined;
+  }
+
+  const { code } = error as { code?: unknown };
+  return typeof code === 'string' ? code : undefined;
+}
+
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isTransientNetworkError(error: unknown): boolean {
+  const code = getErrorCode(error);
+  return code !== undefined && TRANSIENT_NETWORK_ERROR_CODES.has(code);
+}
+
+function isIgnorableInteractionResponseError(error: unknown): boolean {
+  if (error instanceof DiscordAPIError) {
+    return error.code === 10062 || error.code === 40060;
+  }
+
+  const code = getErrorCode(error);
+  return code === '10062' || code === '40060';
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function loginWithRetry(client: Client, token: string, logger: Logger): Promise<void> {
+  let attempt = 0;
+
+  for (;;) {
+    try {
+      await client.login(token);
+      return;
+    } catch (error) {
+      if (!isTransientNetworkError(error)) {
+        throw error;
+      }
+
+      attempt += 1;
+      const delayMs = Math.min(30_000, 1_000 * 2 ** Math.min(attempt - 1, 5));
+
+      logger.warn('Discord login failed; retrying after transient network error.', {
+        attempt,
+        delayMs,
+        code: getErrorCode(error),
+        error: describeError(error),
+      });
+
+      await sleep(delayMs);
+    }
+  }
+}
+
+async function replyWithCommandError(
+  interaction: ChatInputCommandInteraction,
+  description: string,
+  logger: Logger,
+): Promise<void> {
+  const replyPayload: InteractionReplyOptions = {
+    embeds: [errorEmbed('Command Failed', description)],
+    flags: 'Ephemeral',
+  };
+
+  try {
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: replyPayload.embeds });
+      return;
+    }
+
+    if (interaction.replied) {
+      await interaction.followUp(replyPayload);
+      return;
+    }
+
+    await interaction.reply(replyPayload);
+  } catch (error) {
+    if (isIgnorableInteractionResponseError(error)) {
+      logger.warn('Could not deliver command error response to Discord.', {
+        error: describeError(error),
+        code: getErrorCode(error),
+      });
+      return;
+    }
+
+    throw error;
+  }
+}
 
 async function main(): Promise<void> {
   const settings = loadSettings();
@@ -83,12 +188,24 @@ async function main(): Promise<void> {
     rotator.start();
   });
 
-  client.on(Events.InteractionCreate, async (interaction) => {
+  client.on(Events.Error, (error) => {
+    logger.error('Discord client error.', {
+      error: describeError(error),
+    });
+  });
+
+  client.on(Events.InteractionCreate, (interaction) => {
     if (!interaction.isChatInputCommand()) {
       return;
     }
 
-    await handleChatCommand(appContext, registry, interaction);
+    void handleChatCommand(appContext, registry, interaction).catch((error) => {
+      logger.error('Unhandled interaction pipeline failure.', {
+        command: interaction.commandName,
+        interactionId: interaction.id,
+        error: describeError(error),
+      });
+    });
   });
 
   const shutdown = async (signal: string) => {
@@ -101,8 +218,13 @@ async function main(): Promise<void> {
 
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled promise rejection.', {
+      error: describeError(reason),
+    });
+  });
 
-  await client.login(botToken);
+  await loginWithRetry(client, botToken, logger);
 }
 
 function assertGuildAccess(appContext: AppContext, interaction: ChatInputCommandInteraction): void {
@@ -192,17 +314,7 @@ async function handleChatCommand(
       details: normalized.details,
     });
 
-    const replyPayload = {
-      embeds: [errorEmbed('Command Failed', normalized.userMessage)],
-      flags: ['Ephemeral'] as const,
-    };
-
-    if (interaction.deferred || interaction.replied) {
-      await interaction.followUp(replyPayload);
-      return;
-    }
-
-    await interaction.reply(replyPayload);
+    await replyWithCommandError(interaction, normalized.userMessage, logger);
   }
 }
 

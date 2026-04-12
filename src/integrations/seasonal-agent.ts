@@ -34,7 +34,7 @@ export class SeasonalAgentClient {
   constructor(
     private readonly upstreamBaseUrl: string,
     token: string,
-    timeoutMs: number,
+    private readonly timeoutMs: number,
   ) {
     this.http = new JsonHttpClient(
       upstreamBaseUrl,
@@ -46,8 +46,17 @@ export class SeasonalAgentClient {
   }
 
   async health(): Promise<'ok' | 'error'> {
-    const response = await fetch(new URL('/healthz', this.upstreamBaseUrl));
-    return response.ok ? 'ok' : 'error';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Math.min(this.timeoutMs, 5_000));
+
+    try {
+      const response = await fetch(new URL('/healthz', this.upstreamBaseUrl), {
+        signal: controller.signal,
+      });
+      return response.ok ? 'ok' : 'error';
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   async botChat(body: BotChatRequest): Promise<BotChatResponse> {
