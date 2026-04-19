@@ -1,18 +1,25 @@
 import { JsonHttpClient } from '../core/http.js';
 
-export interface BotChatRequest {
-  message: string;
-  session_id: string;
-  persist_history: boolean;
-  agent_profile?: string;
-  target?: string;
+export interface CallerContext {
+  source?: string;
+  transport?: string;
   user_id?: string;
   user_name?: string;
   channel_id?: string;
   channel_name?: string;
   guild_id?: string;
   guild_name?: string;
+  target?: string;
   metadata?: Record<string, unknown>;
+}
+
+export interface BotChatRequest {
+  message: string;
+  session_id: string;
+  persist_history: boolean;
+  agent_profile?: string;
+  target?: string;
+  caller_context?: CallerContext;
 }
 
 export interface BotChatResponse {

@@ -69,19 +69,22 @@ export async function askAgent(
     persist_history: true,
     target: target.id,
     agent_profile: target.agent_profile,
-    user_id: interaction.user.id,
-    user_name: interaction.user.username,
-    guild_id: interaction.guildId ?? undefined,
-    guild_name: interaction.guild?.name ?? undefined,
-    channel_id: interaction.channelId ?? undefined,
-    channel_name: channelName,
-    metadata: {
+    caller_context: {
       source: 'seasonalnet-discord-bot',
       transport: 'discord-slash-command',
-      session_mode: context.settings.agents.session_mode,
-      requested_target: target.id,
-      target_display_name: target.display_name,
-      resolved_agent_profile: target.agent_profile,
+      user_id: interaction.user.id,
+      user_name: interaction.user.username,
+      guild_id: interaction.guildId ?? undefined,
+      guild_name: interaction.guild?.name ?? undefined,
+      channel_id: interaction.channelId ?? undefined,
+      channel_name: channelName,
+      target: target.id,
+      metadata: {
+        session_mode: context.settings.agents.session_mode,
+        requested_target: target.id,
+        target_display_name: target.display_name,
+        resolved_agent_profile: target.agent_profile,
+      },
     },
   });
 }
