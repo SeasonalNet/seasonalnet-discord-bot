@@ -127,7 +127,7 @@ const aboutCommand: ChatCommand = {
       embeds: [
         infoEmbed(
           'About SeasonalNet Bot',
-          'Shared SeasonalNet workflow bot for utility, moderation, and agent-assisted operations. Real business logic should stay in backend services, not inside Discord command handlers.',
+          'This is the SeasonalNet workflow bot for utility, moderation, and other extras.',
         ),
       ],
       flags: 'Ephemeral',
