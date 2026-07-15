@@ -1,6 +1,6 @@
 {
   "name": "seasonalnet-discord-bot",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Shared SeasonalNet Discord bot with utility, moderation, and agent workflows.",
   "type": "module",
