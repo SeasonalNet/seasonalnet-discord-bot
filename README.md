@@ -205,31 +205,31 @@ Then edit at least these sections:
 Install dependencies:
 
 ```bash
-npm install
+pnpm install --frozen-lockfile
 ```
 
 Type-check:
 
 ```bash
-npm run check
+pnpm check
 ```
 
 Run in development mode:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Build production output:
 
 ```bash
-npm run build
+pnpm build
 ```
 
 Run the built bot manually:
 
 ```bash
-npm start
+pnpm start
 ```
 
 ## Slash command deployment
@@ -239,7 +239,7 @@ Commands must be deployed to Discord before use.
 For a normal guild-scoped deployment:
 
 ```bash
-npm run deploy:commands
+pnpm deploy:commands
 ```
 
 The deploy script will use guild IDs from:
@@ -250,7 +250,7 @@ The deploy script will use guild IDs from:
 Global deployment is intentionally guarded. If you truly want global command registration and have not configured any guild targets, set:
 
 ```bash
-SEASONALNET_BOT_DEPLOY_GLOBAL=true npm run deploy:commands
+SEASONALNET_BOT_DEPLOY_GLOBAL=true pnpm deploy:commands
 ```
 
 ## Production deployment
@@ -270,14 +270,14 @@ Example deployment sequence:
 git clone <repo-url> /opt/seasonalnet/discord-bot
 cd /opt/seasonalnet/discord-bot
 cp config.yaml.example config.yaml
-npm install
-npm run build
+pnpm install --frozen-lockfile
+pnpm build
 ```
 
 Create `.env`, adjust `config.yaml`, then deploy commands:
 
 ```bash
-npm run deploy:commands
+pnpm deploy:commands
 ```
 
 After that, install the service unit and start the bot.
@@ -370,7 +370,7 @@ Because it listens for member join events, **Server Members Intent** must be ena
 
 ### Bot starts but commands do not appear
 
-- Confirm `npm run deploy:commands` was run successfully
+- Confirm `pnpm deploy:commands` was run successfully
 - Confirm `SEASONALNET_BOT_CLIENT_ID` is correct
 - Confirm the bot is installed in the target guild
 - Confirm the guild ID used for deployment matches the actual server

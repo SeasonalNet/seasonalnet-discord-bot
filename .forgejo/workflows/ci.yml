@@ -7,41 +7,113 @@ on:
 
 jobs:
   node:
-    runs-on: node20
+    runs-on: node22
+
     steps:
-      - uses: actions/checkout@v6
-      - name: Install dependencies
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Enable pnpm
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          elif [ -f pnpm-lock.yaml ]; then
-            corepack enable
-            pnpm install --frozen-lockfile
-          elif [ -f yarn.lock ]; then
-            corepack enable
-            yarn install --frozen-lockfile
-          elif [ -f package.json ]; then
-            npm install
-          else
-            echo "No package manifest found."
-          fi
-      - name: Run package checks
+          corepack enable
+          node --version
+          pnpm --version
+
+      - name: Verify package metadata
         run: |
           node <<'NODE'
-          const { execSync } = require('node:child_process');
-          const fs = require('node:fs');
-          const scripts = fs.existsSync('package.json') ? (require('./package.json').scripts || {}) : {};
-          const requested = ['check', 'build'];
-          let ran = false;
-          for (const name of requested) {
-            if (scripts[name]) {
-              console.log(`==> npm run ${name}`);
-              execSync(`npm run ${name}`, { stdio: 'inherit' });
-              ran = true;
-            }
+          const pkg = require("./package.json");
+
+          if (pkg.packageManager !== "pnpm@11.17.0") {
+            throw new Error(
+              `expected packageManager pnpm@11.17.0, got ${pkg.packageManager}`
+            );
           }
-          if (!ran) {
-            console.log('No configured package check scripts found; running JavaScript syntax check.');
-            execSync("find . -path './node_modules' -prune -o -path './dist' -prune -o -path './build' -prune -o -name '*.js' -print0 | xargs -0 -r -n 1 node --check", { stdio: 'inherit', shell: '/bin/bash' });
+
+          if (pkg.engines?.node !== ">=22.12.0") {
+            throw new Error(
+              `expected Node engine >=22.12.0, got ${pkg.engines?.node}`
+            );
           }
+
+          if ("overrides" in pkg || "allowScripts" in pkg) {
+            throw new Error(
+              "npm-specific dependency policy remains in package.json"
+            );
+          }
+
+          console.log("package manager:", pkg.packageManager);
+          console.log("Node engine:", pkg.engines.node);
+          NODE
+
+          test -f pnpm-lock.yaml
+          test -f pnpm-workspace.yaml
+          test ! -e package-lock.json
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify dependency policy
+        run: |
+          pnpm ignored-builds
+          pnpm peers check
+          pnpm list --depth 0
+          pnpm list undici --depth Infinity
+
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import YAML from "yaml";
+
+          const settings = YAML.parse(
+            fs.readFileSync("pnpm-workspace.yaml", "utf8")
+          );
+
+          if (settings.overrides?.undici !== "6.28.0") {
+            throw new Error(
+              `unexpected undici override: ${settings.overrides?.undici}`
+            );
+          }
+
+          if (settings.allowBuilds?.["esbuild@0.28.1"] !== true) {
+            throw new Error(
+              "esbuild@0.28.1 is not explicitly approved"
+            );
+          }
+
+          console.log("dependency policy: ok");
+          NODE
+
+      - name: Type-check
+        run: pnpm check
+
+      - name: Build
+        run: |
+          rm -rf dist
+          pnpm build
+
+          test -f dist/src/index.js
+
+          find dist -type f -name '*.js' -print0 |
+            xargs -0 -r -n1 node --check
+
+      - name: Exercise runtime dependencies
+        run: |
+          node --input-type=module <<'NODE'
+          const discord = await import("discord.js");
+          const dotenv = await import("dotenv");
+          const yaml = await import("yaml");
+
+          if (typeof discord.Client !== "function") {
+            throw new Error("discord.js Client did not load");
+          }
+
+          if (typeof dotenv.config !== "function") {
+            throw new Error("dotenv config did not load");
+          }
+
+          if (typeof yaml.parse !== "function") {
+            throw new Error("yaml parser did not load");
+          }
+
+          console.log("runtime dependencies: ok");
           NODE

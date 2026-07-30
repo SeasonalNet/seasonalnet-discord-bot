@@ -1,0 +1,5 @@
+overrides:
+  undici: 6.28.0
+
+allowBuilds:
+  'esbuild@0.28.1': true
