@@ -1,0 +1,12 @@
+.git
+node_modules
+dist
+coverage
+var
+*.log
+config.yaml
+.env
+.env.*
+README.md
+AGENTS.md
+systemd

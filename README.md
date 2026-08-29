@@ -232,6 +232,26 @@ Run the built bot manually:
 pnpm start
 ```
 
+## Docker
+
+The repository includes a production multi-stage Dockerfile. It compiles the
+TypeScript source and keeps only production dependencies in the runtime image.
+Secrets remain runtime environment variables; do not copy `.env` into the
+image.
+
+```bash
+docker build -t seasonalnet/discord-bot:local .
+docker run --rm \
+  --env-file .env \
+  -v "$PWD/config.yaml:/run/config/seasonalnet-discord-bot.yaml:ro" \
+  seasonalnet/discord-bot:local
+```
+
+For a persistent deployment, mount the configured SQLite parent directory at
+`/var/lib/seasonalnet/discord-bot` and set `database.path` accordingly. The
+cross-repository Compose dev deployment intentionally uses ephemeral `/tmp`
+state instead.
+
 ## Slash command deployment
 
 Commands must be deployed to Discord before use.
