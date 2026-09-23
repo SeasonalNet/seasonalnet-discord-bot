@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5 AS build
+FROM node:22-bookworm-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9 AS build
 
 ENV COREPACK_HOME=/tmp/corepack
 WORKDIR /build
@@ -11,7 +11,7 @@ RUN pnpm install --frozen-lockfile \
     && pnpm run build \
     && pnpm prune --prod
 
-FROM node:22-bookworm-slim@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5
+FROM node:22-bookworm-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9
 
 ENV NODE_ENV=production \
     SEASONALNET_BOT_CONFIG=/run/config/seasonalnet-discord-bot.yaml
