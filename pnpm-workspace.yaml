@@ -6,7 +6,7 @@ overrides:
 
 allowBuilds:
   esbuild: set this to true or false
-  'esbuild@0.28.1': true
+  'esbuild@0.28.2': true
 
 minimumReleaseAgeExclude:
   - undici@6.28.1
