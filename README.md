@@ -1,8 +1,6 @@
-# SeasonalNet Discord Bot
+# seasonal-discord-bot
 
-Shared SeasonalNet Discord bot for utility, moderation, welcome automation, and agent-backed workflows.
-
-This repository is the Discord front door for SeasonalNet. It is intentionally thin: command handling, access control, audit logging, and message formatting live here, while heavier logic is expected to stay in backend services such as `seasonal-agent`.
+A SeasonalNet Discord bot for utility, moderation, welcome automation, and agent-backed workflows.
 
 ## What this bot does
 
@@ -52,25 +50,6 @@ This repository is the Discord front door for SeasonalNet. It is intentionally t
 ### Passive behavior
 
 - Guild welcome messages when the welcome module is enabled in config
-
-## Design boundaries
-
-In scope:
-
-- shared bot shell
-- command registration and dispatch
-- utility workflows
-- moderation workflows
-- welcome automation
-- agent-backed `/ask`
-- audit logging and lightweight session tracking
-
-Out of scope:
-
-- putting SeasonalWeather, PBX, or other infrastructure business logic directly in this bot
-- ad-hoc JSON files for persistent state
-- treating the Discord layer as the system of record
-- replacing backend APIs with Discord command logic
 
 ## Repository layout
 

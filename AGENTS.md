@@ -1,4 +1,4 @@
-# AGENTS.md — SeasonalNet Discord Bot
+# AGENTS.md — seasonal-discord-bot
 
 ## Purpose
 
@@ -36,6 +36,7 @@ Current design expects the Discord bot to call `seasonal-agent` with a bot-scope
 Session IDs should stay stable and predictable.
 
 Default pattern:
+
 - per-user in channel
 - include target namespace so parallel sessions do not collide
 
@@ -43,6 +44,7 @@ Example:
 `discord:<guild_id>:<channel_id>:<user_id>:target:<target>`
 
 When calling `seasonal-agent`, pass both:
+
 - `target` for the bot-selected workflow target
 - `agent_profile` for the backend profile selection
 
