@@ -26,7 +26,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^22.20.4
-        version: 22.20.4
+        version: 22.20.5
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
@@ -232,8 +232,8 @@ packages:
     resolution: {integrity: sha512-xzvBr1Q1c4lCe7i6sRnrofxeO1QTP/LKQ6A6qy0iB4x5yfiSfARMEQEghojzTNALDTcv8En04qYNIco9/K9eZQ==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
 
-  '@types/node@22.20.4':
-    resolution: {integrity: sha512-zJRE40jpHtKqE/C4fgHrAKQLJuSpzEnP9ff9Y7YtoR3Wd2pwqzlekDeEuUQXjRd+QCYnVnNwuJYmhdk9XV8gvA==}
+  '@types/node@22.20.5':
+    resolution: {integrity: sha512-U2+DNr+wSjpsTS/wZGYHq7GcwfuSmKiKvoPvK22zwTlRhU91yOniN4qRR5KhIjvif7ysw/dz/hKmfDH0Ris4aA==}
 
   '@types/ws@8.18.2':
     resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
@@ -453,13 +453,13 @@ snapshots:
 
   '@sapphire/snowflake@3.5.5': {}
 
-  '@types/node@22.20.4':
+  '@types/node@22.20.5':
     dependencies:
       undici-types: 6.21.0
 
   '@types/ws@8.18.2':
     dependencies:
-      '@types/node': 22.20.4
+      '@types/node': 22.20.5
 
   '@vladfrangu/async_event_emitter@2.4.7': {}
 
