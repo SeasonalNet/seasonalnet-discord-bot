@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  undici: 6.28.0
+  undici: 6.28.1
   undici@<6.28.1: ^6.28.1
   undici@>=6.25.0 <6.28.1: ^6.28.1
   undici@>=6.7.0 <6.28.1: ^6.28.1
