@@ -1,0 +1,26 @@
+services:
+  seasonalnet-discord-bot:
+    build: .
+    image: seasonalnet-discord-bot:local
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,mode=1777
+    env_file:
+      - .env
+    volumes:
+      - type: bind
+        source: ${CONFIG_FILE:-./config.yaml}
+        target: /run/config/seasonalnet-discord-bot.yaml
+        read_only: true
+        bind:
+          create_host_path: false
+      - data:/var/lib/seasonalnet/discord-bot
+
+volumes:
+  data:

@@ -220,7 +220,10 @@ image.
 
 ```bash
 docker build -t seasonalnet/discord-bot:local .
-docker run --rm \
+docker run --rm --init --read-only --cap-drop=ALL \
+  --security-opt=no-new-privileges:true \
+  --tmpfs /tmp:rw,noexec,nosuid,nodev,mode=1777 \
+  --mount type=volume,src=seasonalnet-discord-bot-data,dst=/var/lib/seasonalnet/discord-bot \
   --env-file .env \
   -v "$PWD/config.yaml:/run/config/seasonalnet-discord-bot.yaml:ro" \
   seasonalnet/discord-bot:local
@@ -402,3 +405,8 @@ Because it listens for member join events, **Server Members Intent** must be ena
 This README is meant for humans operating or extending the repository.
 
 For agent-facing repo rules and architectural expectations, read `AGENTS.md`.
+
+## Hardened containers
+
+See [CONTAINER_SECURITY.md](CONTAINER_SECURITY.md) for the hardened Compose
+launch, writable paths, and deployment requirements.

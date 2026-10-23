@@ -34,3 +34,6 @@ Thumbs.db
 # cutover junk
 *.bak
 *.bak.*
+
+# Container validation tooling
+tools/container/__pycache__/
