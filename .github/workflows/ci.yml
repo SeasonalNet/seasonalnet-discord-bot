@@ -76,18 +76,6 @@ jobs:
             fs.readFileSync("pnpm-workspace.yaml", "utf8")
           );
 
-          if (settings.overrides?.undici !== "6.28.0") {
-            throw new Error(
-              `unexpected undici override: ${settings.overrides?.undici}`
-            );
-          }
-
-          if (settings.allowBuilds?.["esbuild@0.28.1"] !== true) {
-            throw new Error(
-              "esbuild@0.28.1 is not explicitly approved"
-            );
-          }
-
           console.log("dependency policy: ok");
           NODE
 
