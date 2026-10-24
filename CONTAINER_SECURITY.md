@@ -54,7 +54,7 @@ It prints the image ID and executable/library inventory for review. It does not
 claim that retained libraries are vulnerability-free or that every reachable
 interpreter operation is safe.
 
-The production base is digest-pinned distroless Node 22. The previous Debian
+The production base is digest-pinned distroless Node 24. The previous Debian
 Node image remains a build/assembly input. Native addons and TLS behavior must
 be tested in the final runtime after base updates.
 

@@ -410,3 +410,7 @@ For agent-facing repo rules and architectural expectations, read `AGENTS.md`.
 
 See [CONTAINER_SECURITY.md](CONTAINER_SECURITY.md) for the hardened Compose
 launch, writable paths, and deployment requirements.
+
+## Software versions
+
+See [VERSIONING.md](VERSIONING.md) for Git-derived versions, release tags and local builds.

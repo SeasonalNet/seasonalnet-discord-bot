@@ -1,17 +1,22 @@
-FROM node:22-bookworm-slim@sha256:de170b39439eb0e5a3444ad7d60b015614a381e10fecae2e30ec9e735122f38d AS build
+FROM node:24-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS build
 
 ENV COREPACK_HOME=/tmp/corepack
 WORKDIR /build
 
-RUN corepack enable && corepack prepare pnpm@11.17.0 --activate
+RUN corepack enable && corepack prepare pnpm@12.15.0 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
+RUN pnpm install --frozen-lockfile
 COPY src ./src
+COPY tools ./tools
 COPY scripts ./scripts
-RUN pnpm install --frozen-lockfile \
-    && pnpm run build \
+ARG APP_VERSION=0.0.0+unknown
+ARG APP_REVISION=unknown
+ENV APP_VERSION=${APP_VERSION} APP_REVISION=${APP_REVISION}
+
+RUN pnpm run build \
     && pnpm prune --prod
 
-FROM node:22-bookworm-slim@sha256:de170b39439eb0e5a3444ad7d60b015614a381e10fecae2e30ec9e735122f38d AS runtime-files
+FROM node:24-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS runtime-files
 
 ENV NODE_ENV=production \
     SEASONALNET_BOT_CONFIG=/run/config/seasonalnet-discord-bot.yaml
@@ -28,9 +33,25 @@ COPY --from=build --chown=0:0 /build/dist ./dist
 
 RUN rm -rf /app/dist/scripts /app/node_modules/.bin
 
+ARG APP_VERSION=0.0.0+unknown
+ARG APP_REVISION=unknown
+ENV APP_VERSION=${APP_VERSION} APP_REVISION=${APP_REVISION}
+
+RUN node -e "const fs=require('node:fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); p.version=process.env.APP_VERSION; fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\\n');"
+
 RUN chmod -R go-w /app
 
+<<<<<<< HEAD
 FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:10747a1323be68f206aed893599d43e6697ad67257e7c42703553f99fbce3d33 AS runtime
+=======
+FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:cb606325b7ec4af55462cb0b424a53b452a5b4a894ffe841fcf1048d216fb9f8 AS runtime
+
+ARG APP_VERSION=0.0.0+unknown
+ARG APP_REVISION=unknown
+ENV APP_VERSION=${APP_VERSION} APP_REVISION=${APP_REVISION}
+LABEL org.opencontainers.image.version="${APP_VERSION}" org.opencontainers.image.revision="${APP_REVISION}"
+
+>>>>>>> 2c91016 (chore(deps): upgrade lang versions and package managers; have CI audit dependencies)
 USER 0
 ENV PATH=/nodejs/bin
 ENV NODE_ENV=production SEASONALNET_BOT_CONFIG=/run/config/seasonalnet-discord-bot.yaml

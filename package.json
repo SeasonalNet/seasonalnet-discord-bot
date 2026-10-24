@@ -8,11 +8,12 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node tools/stamp-version.mjs dist/src/core && node tools/check-built-version.mjs dist/src/core",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/src/index.js",
     "deploy:commands": "tsx scripts/deploy-commands.ts",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
     "discord.js": "^14.27.0",
@@ -24,5 +25,5 @@
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@11.17.0"
+  "packageManager": "pnpm@12.15.0"
 }
