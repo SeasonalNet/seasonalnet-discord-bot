@@ -7,11 +7,12 @@ import { hasScope, resolveScopes } from '../../core/scopes.js';
 import { infoEmbed, successEmbed, pingEmbed, healthEmbed } from '../../ui/embeds.js';
 import type { CommandAuditRecord, ModerationActionRecord } from '../../storage/database.js';
 import { BOT_VERSION } from '../../core/version.js';
+import { chooseEightBallResponse } from './eight-ball.js';
 
 function buildHelpSections(scopes: Set<string>): string[] {
   const lines = [
     '**Utility**',
-    '`/help`, `/about`, `/ping`, `/version`, `/whoami`',
+    '`/help`, `/about`, `/ping`, `/8ball`, `/version`, `/whoami`',
   ];
 
   if (hasScope(scopes, 'utility.inspect')) {
@@ -146,6 +147,31 @@ const pingCommand: ChatCommand = {
     await interaction.reply({
       embeds: [pingEmbed(gatewayLatency)],
       flags: 'Ephemeral',
+    });
+  },
+};
+
+const eightBallCommand: ChatCommand = {
+  name: '8ball',
+  scope: 'utility.use',
+  data: new SlashCommandBuilder()
+    .setName('8ball')
+    .setDescription('Ask the Magic 8-Ball a question.')
+    .addStringOption((option) =>
+      option
+        .setName('question')
+        .setDescription('What would you like to know?')
+        .setRequired(true)
+        .setMaxLength(500),
+    ),
+  async execute(_context: AppContext, interaction) {
+    const question = interaction.options.getString('question', true).trim();
+    if (!question) {
+      throw new Error('The 8-ball question cannot be empty.');
+    }
+
+    await interaction.reply({
+      embeds: [infoEmbed('Magic 8-Ball', `**Question:** ${question}\n\n🎱 **${chooseEightBallResponse()}**`)],
     });
   },
 };
@@ -332,6 +358,7 @@ export const utilityCommands: ChatCommand[] = [
   helpCommand,
   aboutCommand,
   pingCommand,
+  eightBallCommand,
   whoamiCommand,
   healthCommand,
   scopesCommand,

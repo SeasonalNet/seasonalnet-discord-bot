@@ -19,6 +19,7 @@ A SeasonalNet Discord bot for utility, moderation, welcome automation, and agent
 - `/help`
 - `/about`
 - `/ping`
+- `/8ball`
 - `/whoami`
 - `/health`
 - `/scopes`
