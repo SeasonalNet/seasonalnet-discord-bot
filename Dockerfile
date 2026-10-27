@@ -41,17 +41,13 @@ RUN node -e "const fs=require('node:fs'); const p=JSON.parse(fs.readFileSync('pa
 
 RUN chmod -R go-w /app
 
-<<<<<<< HEAD
 FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:10747a1323be68f206aed893599d43e6697ad67257e7c42703553f99fbce3d33 AS runtime
-=======
-FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:cb606325b7ec4af55462cb0b424a53b452a5b4a894ffe841fcf1048d216fb9f8 AS runtime
 
 ARG APP_VERSION=0.0.0+unknown
 ARG APP_REVISION=unknown
 ENV APP_VERSION=${APP_VERSION} APP_REVISION=${APP_REVISION}
 LABEL org.opencontainers.image.version="${APP_VERSION}" org.opencontainers.image.revision="${APP_REVISION}"
 
->>>>>>> 2c91016 (chore(deps): upgrade lang versions and package managers; have CI audit dependencies)
 USER 0
 ENV PATH=/nodejs/bin
 ENV NODE_ENV=production SEASONALNET_BOT_CONFIG=/run/config/seasonalnet-discord-bot.yaml
