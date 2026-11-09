@@ -41,7 +41,7 @@ RUN node -e "const fs=require('node:fs'); const p=JSON.parse(fs.readFileSync('pa
 
 RUN chmod -R go-w /app
 
-FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:8ad9cc935b7843c4024b7e1487b5ef472c354ea847b97c667023e2618552607e AS runtime
+FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:1b90ca047c3a1046ad3527998c747c25b6a88dde91ba8c71b98669d5813aaa21 AS runtime
 
 ARG APP_VERSION=0.0.0+unknown
 ARG APP_REVISION=unknown
