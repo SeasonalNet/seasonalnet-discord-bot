@@ -1,9 +1,9 @@
-FROM node:24-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS build
+FROM node:26-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS build
 
-ENV COREPACK_HOME=/tmp/corepack
 WORKDIR /build
 
-RUN corepack enable && corepack prepare pnpm@12.15.0 --activate
+RUN npm install --global pnpm@12.21.0 \
+    && test "$(pnpm --version)" = "12.21.0"
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 RUN pnpm install --frozen-lockfile
 COPY src ./src
@@ -16,7 +16,7 @@ ENV APP_VERSION=${APP_VERSION} APP_REVISION=${APP_REVISION}
 RUN pnpm run build \
     && pnpm prune --prod
 
-FROM node:24-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS runtime-files
+FROM node:26-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS runtime-files
 
 ENV NODE_ENV=production \
     SEASONALNET_BOT_CONFIG=/run/config/seasonalnet-discord-bot.yaml
@@ -41,7 +41,7 @@ RUN node -e "const fs=require('node:fs'); const p=JSON.parse(fs.readFileSync('pa
 
 RUN chmod -R go-w /app
 
-FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:39c66687298417dbf3ff2fb8b6012c20554494e16414ef7afd07b9abbb45b501 AS runtime
+FROM gcr.io/distroless/nodejs26-debian13:nonroot@sha256:1d736cf8b5716c07a245301f92717143215d248fd55771ee1936ef4b3302e531 AS runtime
 
 ARG APP_VERSION=0.0.0+unknown
 ARG APP_REVISION=unknown
