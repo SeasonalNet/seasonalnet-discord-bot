@@ -1,4 +1,4 @@
-FROM node:26-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS build
+FROM node:26-bookworm-slim@sha256:0042e17d232a87a2cd485be1da7900fca4d10a4ad11b29e9285da1d2e54798c9 AS build
 
 WORKDIR /build
 
@@ -16,7 +16,7 @@ ENV APP_VERSION=${APP_VERSION} APP_REVISION=${APP_REVISION}
 RUN pnpm run build \
     && pnpm prune --prod
 
-FROM node:26-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS runtime-files
+FROM node:26-bookworm-slim@sha256:0042e17d232a87a2cd485be1da7900fca4d10a4ad11b29e9285da1d2e54798c9 AS runtime-files
 
 ENV NODE_ENV=production \
     SEASONALNET_BOT_CONFIG=/run/config/seasonalnet-discord-bot.yaml
